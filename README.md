@@ -181,7 +181,7 @@ See:
 ## License
 
 * **Code:** MIT
-* **Data (RetailOpt-190 JSON): CC BY 4.0
+* **Data:** CC BY 4.0
 
 ---
 
