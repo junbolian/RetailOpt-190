@@ -1,11 +1,9 @@
 import argparse
 import json
 from pathlib import Path
-import yaml  # pip install pyyaml
+import yaml
 
 
-# Path settings: assume this script is inside reloop/tools/
-# ROOT points to reloop/
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -16,21 +14,19 @@ Goal: semantic fidelity. The MILP must implement the structurally active mechani
 Execution contract:
 - The scenario JSON is pre-loaded as a Python dict named `data`. Do NOT modify `data`.
 - Do NOT perform any file I/O (no open(), json.load(), Path.read_text(), etc.).
+- If the prompt includes a JSON preview, it is for reference only. Do NOT hard-code numeric constants from it.
+  Always read sets/parameters from `data` at runtime.
 
-Modeling requirements:
+Modeling requirements (Strict Flow Logic):
 - Implement a mixed-integer linear program (MILP) in Python using gurobipy.
-- Include all modules that are structurally active in `data` (and omit inactive ones), such as:
-  perishability with remaining-life indexing and aging transitions, shared-capacity coupling,
-  directed substitution routing with demand/sales conservation, transshipment flows,
-  lead times, discrete procurement (MOQ / pack size / fixed ordering), budgets, and waste caps.
-
-Data semantics (must follow):
-- Demand allocation: if `data` contains `demand_curve` by product and period and `demand_share` by location, interpret `demand_curve[p][t]` as total demand for product p in period t, and allocate location demand as `Dem[p,l,t] = demand_curve[p][t] * demand_share[l]`.
-- Production/procurement capacity: if `data` contains `production_cap[p][t]` with no location index, interpret it as a global (network-wide) capacity for product p in period t, enforced on orders/production decisions as `sum_l Q[p,l,t] <= production_cap[p][t]`. Lead times (if any) only shift arrivals across periods; do NOT reinterpret `production_cap` as an arrival/inflow cap.
+- **Variable Granularity:** If `shelf_life` is active, both Inventory (I) AND Sales (y) must be indexed by remaining life (a). This allows precise FIFO tracking and holding cost calculation.
+- **Strict Aging Equality:** Use exact flow conservation for inventory aging: I[p,l,t+1,a] = I[p,l,t,a+1] - y[p,l,t,a+1] for a < shelf_life. 
+- **Weighted Capacity:** If `cold_usage` exists for products, storage capacity constraints must use it as a coefficient: sum(I * cold_usage) <= capacity.
+- **Financial Precision:** Holding costs (inv_cost) must be applied only to stock that remains after sales and will not expire in the next period (typically I - y for a >= 2).
 
 Naming contract (required for automatic semantic checking):
 - Use the following variable dictionaries with exactly these names when active:
-  I (inventory by remaining life), y (sales/consumption), W (waste),
+  I (inventory by remaining life), y (sales/consumption by remaining life), W (waste),
   Q (orders), L (lost sales), d (direct demand served),
   S (substitution routing), X (transshipment), z (order trigger), n (pack integer).
 - When adding constraints, set the `name=` field using these prefixes (plus indices):
@@ -38,13 +34,30 @@ Naming contract (required for automatic semantic checking):
   init, fresh_inflow, aging, storage_cap, prod_cap, labor_cap, moq_lb, moq_ub,
   pack, budget, wastecap.
 
+Data structure notes:
+- JSON fields may use different indexing schemes. Always check the actual structure at runtime using isinstance().
+- Product parameters (shelf_life, lead_time, return_rate, labor_usage, cold_usage) are indexed by product only, not by location: {product: value}.
+- Capacity fields may be static or time-varying. Check if the value is a scalar, list, or nested dict:
+  * cold_capacity: {location: number} or {location: {period: number}}
+  * production_cap: {product: [values]} (list indexed by period) or {product: number}
+  * labor_cap: {location: [values]} or {period: number}
+- Demand: if a `demand` field exists as {product: {location: {period: value}}}, use it directly. Otherwise construct from demand_curve and demand_share.
+- Cost and constraint parameters are in the `costs` and `constraints` sections respectively.
+- Network structure (substitution, transshipment) is in the `network` section as lists of edge pairs.
+
 Objective (reference semantics):
 - Minimize total cost including all cost terms present in `data`: holding/inventory, waste, and lost-sales penalties;
   plus purchasing/ordering costs if provided; plus (if enabled) transshipment cost and fixed ordering cost.
 - If a cost term is missing in `data`, treat it as zero; do not invent extra data.
 
-Solving and output:
-- Call the solver and print the solver status and the objective value (if available).
+Solving and reporting contract (required for comparability):
+- Set Gurobi parameters for reproducibility unless explicitly overridden by the evaluation harness:
+  OutputFlag=0, Threads=1, Seed=0.
+  Do NOT set TimeLimit unless provided by the harness/environment.
+- Always print the solver status code.
+- Only treat the printed objective as "final" when status == GRB.OPTIMAL.
+- If status is not GRB.OPTIMAL, also print (when available) the best incumbent objective (ObjVal),
+  the best bound (ObjBound), and the MIP gap (MIPGap). Do not pretend it is optimal.
 
 Return:
 - Output a single Python script as plain text.
@@ -83,6 +96,8 @@ called `data`. Your code should read all sets and parameters from `data` using
 these fields and must not change any numeric values or perform any file I/O
 (for example, do not call open or json.load).
 
+{json_block}
+
 [INSTRUCTION]
 Using ONLY the information above, write a complete Python script that:
 
@@ -91,7 +106,8 @@ Using ONLY the information above, write a complete Python script that:
 3) Builds and solves a mixed-integer linear program that reflects the business
    description and the structure implied by the JSON fields (including capacities,
    shelf life, lead times, substitution edges, transshipment edges, and other keys/conditions present in `data`),
-4) Prints the solver status and the optimal objective value.
+4) Sets reproducibility parameters (OutputFlag=0, Threads=1, Seed=0) unless the harness overrides them,
+5) Prints: status always; objective only as final if OPTIMAL; otherwise also print ObjVal/ObjBound/MIPGap when available.
 
 Do not invent extra data. Do not change any numbers from the JSON.
 Return ONLY the Python source code as plain text, with no comments and no Markdown.
@@ -102,9 +118,6 @@ def load_archetype_meta(path: Path):
     with open(path, "r", encoding="utf-8") as f:
         meta = yaml.safe_load(f) or {}
 
-    # Allow either:
-    #  (a) top-level mapping: {archetype_id: {...}}
-    #  (b) wrapped mapping: {"archetypes": {archetype_id: {...}}}
     if isinstance(meta, dict) and "archetypes" in meta and isinstance(meta["archetypes"], dict):
         meta = meta["archetypes"]
 
@@ -118,7 +131,6 @@ def infer_archetype_id(scenario_id: str, data: dict):
     if isinstance(data, dict) and data.get("archetype"):
         return str(data["archetype"])
 
-    # Default convention: drop trailing "_v{int}" if present
     if "_v" in scenario_id:
         left, right = scenario_id.rsplit("_v", 1)
         if right.isdigit():
@@ -127,37 +139,134 @@ def infer_archetype_id(scenario_id: str, data: dict):
     return scenario_id
 
 
+def choose_prompt_dir(root: Path, scenario_dir: Path, override: str | None):
+    if override:
+        return Path(override)
+
+    shared = root / "scenarios" / "prompts"
+    if shared.exists():
+        return shared
+
+    return scenario_dir / "prompts"
+
+
+def build_json_block(data: dict, indent: int):
+    txt = json.dumps(data, ensure_ascii=False, indent=indent)
+    return (
+        "[JSON_PREVIEW]\n"
+        "This JSON preview is for reference only. Do NOT hard-code numbers from it.\n"
+        "Always read from `data` at runtime.\n"
+        f"{txt}\n"
+        "[/JSON_PREVIEW]"
+    )
+
+
+def is_scenario_set_dir(d: Path):
+    if not d.is_dir():
+        return False
+    data_dir = d / "data"
+    spec_file = d / "spec" / "archetypes.yaml"
+    if not data_dir.exists() or not spec_file.exists():
+        return False
+    if not any(data_dir.glob("*.json")):
+        return False
+    return True
+
+
+def auto_detect_scenario(root: Path):
+    scenarios_root = root / "scenarios"
+    if not scenarios_root.exists():
+        return None, [], "missing_scenarios_root"
+
+    if is_scenario_set_dir(scenarios_root):
+        return "__ROOT__", [scenarios_root], "root_is_scenario_set"
+
+    candidates = sorted(
+        [p for p in scenarios_root.iterdir() if p.is_dir() and is_scenario_set_dir(p)],
+        key=lambda x: x.name,
+    )
+    if not candidates:
+        return None, [], "no_candidates"
+
+    prefer = ["retailopt_190", "retail_comprehensive"]
+    for name in prefer:
+        for c in candidates:
+            if c.name == name:
+                return c.name, candidates, "preferred_candidate"
+
+    return candidates[0].name, candidates, "first_candidate"
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--scenario",
         type=str,
         default=None,
-        help="Scenario folder name under reloop/scenarios/ (e.g., retailopt_190 or retail_comprehensive). "
-             "If omitted, auto-detects retailopt_190 then retail_comprehensive.",
+        help="Scenario folder name under reloop/scenarios/. "
+             "If your layout is scenarios/{data,spec}, pass --scenario __ROOT__ or omit to auto-detect.",
     )
     parser.add_argument(
-        "--write_combined",
+        "--prompts_root",
+        type=str,
+        default=None,
+        help="Optional override output directory for prompts. "
+             "If omitted, will prefer ROOT/scenarios/prompts when it exists; otherwise scenario_dir/prompts.",
+    )
+    parser.add_argument(
+        "--include_json",
         action="store_true",
-        help="Also write a combined file containing system+user prompt for each scenario.",
+        help="Include a pretty-printed JSON preview in the per-scenario user prompt (reference only).",
+    )
+    parser.add_argument(
+        "--json_indent",
+        type=int,
+        default=2,
+        help="Indent level for the JSON preview when --include_json is set.",
+    )
+    parser.add_argument(
+        "--no_user_files",
+        action="store_true",
+        help="Do not write per-scenario .user.txt files.",
+    )
+    parser.add_argument(
+        "--no_combined",
+        action="store_true",
+        help="Do not write combined system+user .txt files. (Default writes combined.)",
     )
     args = parser.parse_args()
 
-    # Auto-detect scenario folder if not provided
     scenario_name = args.scenario
-    if scenario_name is None:
-        if (ROOT / "scenarios" / "retailopt_190").exists():
-            scenario_name = "retailopt_190"
-        elif (ROOT / "scenarios" / "retail_comprehensive").exists():
-            scenario_name = "retail_comprehensive"
-        else:
-            print("[ERROR] Could not auto-detect scenario folder. Use --scenario <name>.")
-            return
+    detected_candidates = []
+    detect_mode = None
 
-    scenario_dir = ROOT / "scenarios" / scenario_name
+    if scenario_name is None:
+        scenario_name, detected_candidates, detect_mode = auto_detect_scenario(ROOT)
+        if scenario_name is None:
+            scenarios_root = ROOT / "scenarios"
+            print("[ERROR] Could not auto-detect scenario folder. Use --scenario <name>.")
+            if scenarios_root.exists():
+                dirs = [p.name for p in scenarios_root.iterdir() if p.is_dir()]
+                print(f"[HINT] Found subdirectories under {scenarios_root}: {dirs}")
+                print("[HINT] Your repo currently does NOT match scenarios/<name>/{data,spec} layout.")
+                print("[HINT] A valid scenario folder must contain: data/*.json and spec/archetypes.yaml")
+                print("[HINT] If you intend scenarios/ itself to be the scenario set, create scenarios/data and scenarios/spec (with archetypes.yaml) and put JSONs into scenarios/data.")
+            return
+        else:
+            if detect_mode == "root_is_scenario_set":
+                print("[OK] Auto-detected layout: scenarios/ is the scenario set (data/spec directly under scenarios).")
+            else:
+                print(f"[OK] Auto-detected scenario folder: {scenario_name}")
+                if len(detected_candidates) > 1:
+                    print(f"[OK] Candidates: {[c.name for c in detected_candidates]}")
+
+    if scenario_name == "__ROOT__":
+        scenario_dir = ROOT / "scenarios"
+    else:
+        scenario_dir = ROOT / "scenarios" / scenario_name
+
     data_dir = scenario_dir / "data"
     spec_dir = scenario_dir / "spec"
-    prompt_dir = scenario_dir / "prompts"
     archetype_meta_file = spec_dir / "archetypes.yaml"
 
     if not archetype_meta_file.exists():
@@ -174,9 +283,10 @@ def main():
         return
 
     arche_meta = load_archetype_meta(archetype_meta_file)
+
+    prompt_dir = choose_prompt_dir(ROOT, scenario_dir, args.prompts_root)
     prompt_dir.mkdir(parents=True, exist_ok=True)
 
-    # Write system prompt once
     sys_path = prompt_dir / "system_prompt.txt"
     with open(sys_path, "w", encoding="utf-8") as f_sys:
         f_sys.write(SYSTEM_PROMPT)
@@ -203,31 +313,38 @@ def main():
         family_name = meta.get("family_name", "unknown")
         description = str(meta.get("description", "")).strip()
 
+        json_block = ""
+        if args.include_json:
+            json_block = build_json_block(data, args.json_indent)
+
         user_prompt = USER_TEMPLATE.format(
             family_id=family_id,
             family_name=family_name,
             archetype_id=archetype_id,
             scenario_id=scenario_id,
             description=description,
+            json_block=json_block,
         )
 
-        out_user = prompt_dir / f"{scenario_id}.user.txt"
-        with open(out_user, "w", encoding="utf-8") as f_out:
-            f_out.write(user_prompt)
-            f_out.write("\n")
+        if not args.no_user_files:
+            out_user = prompt_dir / f"{scenario_id}.user.txt"
+            with open(out_user, "w", encoding="utf-8") as f_out:
+                f_out.write(user_prompt)
+                f_out.write("\n")
+            print(f"[OK] Wrote user prompt for {scenario_id} -> {out_user}")
 
-        if args.write_combined:
+        if not args.no_combined:
             out_combined = prompt_dir / f"{scenario_id}.txt"
             with open(out_combined, "w", encoding="utf-8") as f_out:
                 f_out.write(SYSTEM_PROMPT)
                 f_out.write("\n\n")
                 f_out.write(user_prompt)
                 f_out.write("\n")
+            print(f"[OK] Wrote combined prompt for {scenario_id} -> {out_combined}")
 
-        print(f"[OK] Wrote user prompt for {scenario_id} -> {out_user}")
         ok_count += 1
 
-    print(f"Done. prompts_ok={ok_count}, skipped={skip_count}, scenario={scenario_name}")
+    print(f"Done. prompts_ok={ok_count}, skipped={skip_count}, scenario={scenario_name}, prompt_dir={prompt_dir}")
 
 
 if __name__ == "__main__":
