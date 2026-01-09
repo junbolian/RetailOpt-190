@@ -1,4 +1,4 @@
-# RetailOpt-190
+# RetailOpt-190: A Retail Supply Chain Benchmark for Text-to-Optimization
 
 **RetailOpt-190** is a solver-validated benchmark for evaluating **semantic reliability** in text-to-optimization. It tests whether LLM-based agents can reconstruct the *intended optimization structure*—not just produce runnable code.
 
