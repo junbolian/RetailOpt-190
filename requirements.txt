@@ -1,11 +1,11 @@
 # Core solver and data utilities
-gurobipy>=11.0.0
+gurobipy>=10.0.0
 numpy>=1.26.4
 pandas>=1.5.3
 pyyaml>=6.0.0
 requests>=2.32.0
 
-# LLM agent stack (OpenAI/Qwen compatible)
+# LLM agent stack
 langchain==0.3.8
 langchain-openai==0.3.0
 openai==1.109.1

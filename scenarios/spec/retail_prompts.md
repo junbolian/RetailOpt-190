@@ -1,300 +1,426 @@
-# RetailOpt-190 – LLM Prompt Templates
-
-> File: `reloop/scenarios/retailopt_190/spec/retail_prompts.md`
-> Goal: Document how each JSON instance in **RetailOpt-190** is converted into a text-based prompt for LLM-driven optimization agents, consistent with the current code in `reloop/tools` and the JSON schema used by `universal_retail_solver.py`.
+# RetailOpt-190: Prompt System Documentation
 
 ---
 
-## 1. System Prompt Template
+## 1. Prompt Architecture
 
-All models evaluated on this benchmark are expected to receive the same **system prompt**.
-It matches the `SYSTEM_PROMPT` string used by the prompt-generation script in `reloop/tools/`.
+RetailOpt-190 uses **two prompt formats** for different evaluation modes:
 
-```text
-You are an optimization modeling assistant specialized in retail supply chains.
+### Two Prompt Files Per Scenario
 
-Your task:
-- Read a natural-language scenario description and a JSON data blob.
-- Infer the correct mathematical optimization model (MILP) that matches the business logic.
-- Implement that model as Python code using the Gurobi solver (gurobipy).
-- Do NOT change the JSON data. Treat it as given inputs.
+| File | Content | Used By |
+|------|---------|---------|
+| `{scenario_id}.scenario.txt` | Scenario + guardrails + instructions | Zero-shot baseline (single LLM call) |
+| `{scenario_id}.base.txt` | Scenario description only | ReLoop Agent (guardrails injected by step_prompts) |
 
-Requirements:
-- Define all sets and parameters using the JSON fields.
-- Define decision variables with clear, concise names.
-- Add constraints that match the scenario description and the implied structure.
-- Set an objective that minimizes total cost, including holding cost, lost-sales penalties,
-  waste, ordering cost, and other costs implied by the JSON.
-- At the end of the script, build the model, call the solver, and print the objective value
-  and basic summaries of key decisions.
+---
 
-Return:
-- A single Python script as plain text (no Markdown formatting, no code fences).
+## 2. Evaluation Modes
+
+### Mode 1: Zero-shot Baseline (All Baseline Models)
+
+**Input:** `{scenario_id}.scenario.txt` (complete prompt)
+
+```
+┌─────────────────────────────────────────┐
+│ [SCENARIO]                              │
+│ Family, archetype, business narrative   │
+│ Structure cues                          │
+│                                         │
+│ [MODELING GUIDELINES]                   │
+│ Core rules, data format, variables      │
+│ Objective function, substitution        │
+│ Constraints, boundary conditions        │
+│                                         │
+│ [DATA ACCESS]                           │
+│ Key fields documentation                │
+│                                         │
+│ [INSTRUCTION]                           │
+│ Write GurobiPy script...                │
+└─────────────────────────────────────────┘
+         ↓
+      [LLM] (single call)
+         ↓
+   Python script
+         ↓
+  [Execute + Probes]
+         ↓
+      Results
 ```
 
-### 1.1 Execution context for the system prompt
+**For:** GPT-4o, Claude, Qwen2.5-Coder, SIRL, ORLM, OptiMUS, OptiChat
 
-In the benchmark pipeline, the phrase “JSON data blob” refers to the parsed contents of the scenario file that are exposed to the agent as a Python dictionary named `data`. The raw JSON text is **not** embedded in the prompt itself. Instead, for each scenario the evaluation harness:
+### Mode 2: ReLoop Agent (Multi-step Pipeline)
 
-1. Reads the corresponding JSON file from disk.
-2. Parses it into a Python dictionary.
-3. Binds that dictionary to a variable called `data`.
-4. Executes the Python script returned by the model in an environment where `data` is already defined.
+**Input:** `{scenario_id}.base.txt` (scenario only)
 
-Agents must therefore **read all parameters from `data` only**, without performing any file I/O (no `open`, `json.load`, etc.) and without modifying `data` in place.
+```
+┌─────────────────────────────────────────┐
+│ [SCENARIO]                              │
+│ Family, archetype, business narrative   │
+│ (NO guardrails - injected separately)   │
+└─────────────────────────────────────────┘
+         ↓
+   Step 0: Global Guardrails
+   Step 1: Task Contract
+   Step 2: Model Specification
+   Step 3: Constraint Templates
+   Step 4: Code Generation
+         ↓
+  [Semantic Probes]
+         ↓
+   Step 5: Repair (if probes fail)
+         ↓
+      Results
+```
 
-The benchmark harness always sends this system prompt, followed by an instance-specific **user prompt** defined below.
+**For:** ReLoop (our method)
 
 ---
 
-## 2. User Prompt Template (Per JSON Instance)
+## 3. Baseline Prompt Content
 
-For each JSON instance in `scenarios/retailopt_190/data/`, the prompt builder script combines:
+### Section 1: Scenario Description
 
-* The archetype-level description from `archetypes.yaml` / `retail_spec.md`, and
-* The file name / scenario ID of the specific JSON instance.
-
-The JSON blob itself is **not** pasted into the prompt; instead, the model is told that a Python variable called `data` already contains the parsed JSON, as described in Section 1.1.
-
-The generic **user prompt template** is:
-
-```text
+```
 [SCENARIO]
 Family: {family_id} ({family_name})
 Archetype: {archetype_id}
 Scenario ID: {scenario_id}
 
-{description}
-
-Operational context:
-- The JSON contains the number of time periods, the list of products, and the list of locations
-  directly as top-level fields (for example: "periods", "products", "locations").
-- Cost parameters such as holding, lost-sales, waste, purchasing, and any fixed ordering costs
-  are stored in the "costs" section of the JSON.
-- Capacity and operational limits such as storage capacity, production capacity, labor capacity,
-  shelf life, lead times, minimum order quantities, pack sizes, and any waste or budget limits
-  are stored in fields such as "cold_capacity", "production_cap", "labor_cap", "shelf_life",
-  "lead_time", "constraints", and "network".
-- Scenario-level control parameters such as global minimum order quantities, pack sizes, fixed
-  ordering costs, per-period budgets, and waste caps are provided as scalar fields inside the
-  "constraints" and "costs" sections and should be applied uniformly across products and locations
-  unless the scenario description explicitly specifies otherwise.
-- Substitution and transshipment structures are encoded in the "network" section, for example
-  as substitution edges or transshipment edges between locations.
-- The model should respect all of these fields exactly as given and interpret them in a way
-  consistent with the scenario description.
-
-JSON data (do not modify):
-The evaluation harness loads the JSON for this scenario into a Python variable
-called `data`. Your code should read all sets and parameters from `data` using
-these fields and must not change any numeric values or perform any file I/O (for example, do not call open or json.load).
-
-[INSTRUCTION]
-Using ONLY the information above, write a complete Python script that:
-
-1) Imports gurobipy (import gurobipy as gp; from gurobipy import GRB),
-2) Assumes the JSON has already been loaded into a Python variable called `data`,
-3) Builds and solves a mixed-integer linear program that reflects the business
-   description and the structure implied by the JSON fields (including capacities,
-   shelf life, lead times, substitution edges, transshipment edges, and other flags),
-4) Prints the solver status and the optimal objective value.
-
-Do not invent extra data. Do not change any numbers from the JSON.
-Return ONLY the Python source code as plain text, with no comments and no Markdown.
-```
-
-This text is exactly the `USER_TEMPLATE` implemented in the prompt-generation script, with `{family_id}`, `{family_name}`, `{archetype_id}`, `{scenario_id}`, and `{description}` filled from `archetypes.yaml`.
-
-Agents should treat `data` as a read-only source of inputs conforming to the JSON schema described in `retail_spec.md` and `universal_retail_solver.py`.
-
----
-
-## 3. Example Prompt File Layout
-
-Each generated prompt file under:
-
-```text
-reloop/scenarios/retailopt_190/prompts/
-```
-
-has the following outer structure:
-
-```text
-### SYSTEM PROMPT ###
-<SYSTEM_PROMPT_TEXT>
-
-### USER PROMPT ###
-<USER_PROMPT_TEXT_FOR_THIS_INSTANCE>
-```
-
-This is purely a file layout convention. The actual API call to the LLM uses:
-
-* `SYSTEM_PROMPT_TEXT` as the system message, and
-* `USER_PROMPT_TEXT_FOR_THIS_INSTANCE` as the user message.
-
-The corresponding JSON is **never** inlined inside these `.txt` files. For each scenario, the evaluation harness separately loads the matching JSON file into the Python variable `data` before executing the code returned by the model.
-
----
-
-## 4. Example User Prompt (Instance: `retail_f3_storage_bottleneck_v0`)
-
-Below is a concrete example of the **user** portion of the prompt for one RetailOpt-190 instance
-(`retail_f3_storage_bottleneck_v0`). It follows the generic template above and assumes:
-
-* JSON file: `scenarios/retailopt_190/data/retail_f3_storage_bottleneck_v0.json`
-* The JSON has already been parsed into a Python variable named `data`.
-
-```text
-[SCENARIO]
-Family: F3 (Shared Resources and Capacity)
-Archetype: retail_f3_storage_bottleneck
-Scenario ID: retail_f3_storage_bottleneck_v0
-
 Business narrative:
-All locations share a tight storage capacity in each period. The storage space
-represents a generic mix of dry, ambient, or temperature-controlled storage.
-At each (location, period), inventory for all SKUs together must fit into a single
-shared capacity. Higher-volume items consume more storage than smaller items.
-Demand is seasonal but feasible if the model correctly couples inventory across
-products via a single storage-capacity constraint at each (location, period).
+{business_narrative}
 
 Structure cues:
-- Use the same single-echelon inventory and lost-sales logic as in the core
-  operations family: multiple products, multiple locations, and exogenous
-  seasonal demand per product.
-- At every location and period, a single shared storage-capacity constraint
-  limits the volume-weighted sum of on-hand inventory across all products using
-  product-specific storage usage ("cold_usage") and the location capacity
-  ("cold_capacity") from the JSON.
-- There is no transshipment and lead times are zero in this archetype.
-- Substitution behavior remains as defined by the "sub_edges" field in the JSON
-  (which may be empty or include a small number of arcs).
-- Labor capacity and production capacity are as in the base scenario, but must
-  still be respected wherever specified in the JSON.
-
-Operational context:
-- The JSON provides top-level keys "periods", "products", and "locations".
-- Demand for each product is given as a time series in "demand_curve" and is
-  allocated across locations via "demand_share".
-- Storage capacity per location is given in "cold_capacity", and per-unit
-  storage usage per product is given in "cold_usage".
-- Costs for inventory, waste, and lost sales are provided in the "costs" object.
-
-JSON data (do not modify):
-The evaluation harness loads the JSON for this scenario into a Python variable
-called `data`. Your code should read all sets and parameters from `data` using
-these fields and must not change any numeric values or perform any file I/O.
-
-[INSTRUCTION]
-Using ONLY the information above, write a complete Python script that:
-
-1) Imports gurobipy as gp and from gurobipy import GRB,
-2) Assumes the JSON has already been loaded into a Python variable called `data`,
-3) Builds a mixed-integer linear program with at least the following elements:
-
-   - Decision variables for:
-     * Inventory by product, location, period, and (if needed) vintage or shelf-life age,
-     * Orders or inbound quantities by product, location, and period (respecting production caps),
-     * Lost sales by product, location, and period,
-     * Any additional variables needed to represent the shared storage constraint.
-
-   - Inventory balance constraints that track how inventory evolves over time.
-   - A single shared storage-capacity constraint at each (location, period) that
-     couples all SKUs using their per-unit storage usage and the "cold_capacity"
-     values from the JSON.
-   - No transshipment between locations and no positive lead times; inbound flow
-     becomes available immediately unless the JSON specifies otherwise.
-
-4) Sets an objective that minimizes total cost, including:
-   - Inventory holding cost,
-   - Waste cost (if applicable),
-   - Lost-sales penalties.
-
-5) Builds the model, calls the solver, and prints:
-   - The solver status,
-   - The optimal objective value.
-
-Return ONLY the Python source code as plain text, with no comments and no Markdown.
+{structure_cues}
 ```
 
-This example is illustrative; all other archetypes follow the same structure but use
-their own business narrative and structure cues from `archetypes.yaml` / `retail_spec.md`.
+### Section 2: Modeling Guidelines
 
----
+#### Core Rules
 
-## 5. Repair Prompt Template (ReLoop-style IIS Feedback)
-
-When a solver (for example, the reference `universal_retail_solver.py`) detects infeasibility
-or structural inconsistencies in the LLM-generated model, a **repair prompt** can be built.
-This prompt reuses the same scenario description and JSON semantics, but augments them with
-diagnostics about what went wrong.
-
-A generic repair template is:
-
-```text
-[SCENARIO]
-(same text as the original user prompt for this instance)
-
-[PREVIOUS MODEL]
-Here is the previous Python model you wrote:
-
-<MODEL_CODE_SNIPPET>
-
-[DIAGNOSTICS]
-The solver reports that the model is infeasible or structurally inconsistent.
-An IIS (Irreducible Infeasible Subset) or conflict refinement points to the
-following constraints or relationships as problematic:
-
-<PLAIN_LANGUAGE_SUMMARY_OF_IIS>
-
-[INSTRUCTION]
-Revise the model to resolve these conflicts while keeping the JSON data and the
-scenario description unchanged. In particular, consider:
-
-- Whether constraints that require strict demand satisfaction should be relaxed
-  by introducing lost-sales variables with appropriate penalties.
-- Whether shared capacity constraints couple SKUs correctly at each (location, period).
-- Whether any logical impossibility (for example, demand > maximum possible supply)
-  should be handled through slack variables or lost sales instead of hard equalities.
-
-Return the corrected Python script as plain text, replacing the previous model.
-Do not change any numbers in the JSON or assume access to external data.
+```
+[CORE RULES]
+- `data` is a pre-loaded Python dict. Do not modify it.
+- No file I/O. Never invent missing data.
+- Never hard-code numeric values.
+- Output must be plain Python code. No prose, no markdown, no comments.
 ```
 
-The IIS summary is generated by the evaluation framework using the reference solver and
-its conflict-refinement APIs; the LLM only sees a plain-language description.
+#### Data Format
+
+```
+[DATA FORMAT]
+- Network data is NESTED - use safe access:
+  sub_edges = data.get('network', {}).get('sub_edges', [])
+  trans_edges = data.get('network', {}).get('trans_edges', [])
+- DO NOT use data['sub_edges'] directly - this will cause KeyError!
+- demand_share: {location: scalar}, NOT nested by product
+- demand[p,l,t] = demand_curve[p][t-1] * demand_share[l]
+- Time indexing: 1-based (t = 1, 2, ..., T)
+- production_cap[p] is a list (0-indexed), access with [t-1]
+```
+
+#### Decision Variables
+
+```
+[DECISION VARIABLES]
+- I[p,l,t,a]: inventory by product, location, period, remaining life bucket
+- y[p,l,t,a]: sales from each life bucket
+- W[p,l,t]: waste (expired inventory from bucket a=1)
+- Q[p,l,t]: orders/production quantity
+- L[p,l,t]: lost sales (slack variable for unmet demand)
+- S[p_from,p_to,l,t]: substitution flow (only if sub_edges nonempty)
+- X[p,l_from,l_to,t]: transshipment flow (only if trans_edges nonempty)
+- z[p,l,t]: binary order indicator (only if moq > 0 or fixed_order > 0)
+- n[p,l,t]: integer pack count (only if pack_size > 1)
+```
+
+#### Objective Function
+
+```
+[OBJECTIVE FUNCTION]
+Minimize total cost including:
+1. PURCHASING COST: costs["purchasing"][p] * Q[p,l,t]
+2. INVENTORY HOLDING: costs["inventory"][p] * (I[p,l,t,a] - y[p,l,t,a])
+   - Apply to END-OF-PERIOD inventory (I - y), NOT just I
+   - Apply ONLY to buckets a >= 2 (a=1 expires, not held overnight)
+3. WASTE COST: costs["waste"][p] * W[p,l,t]
+4. LOST SALES: costs["lost_sales"][p] * L[p,l,t]
+5. TRANSSHIPMENT (if trans_edges): costs["transshipment"] * X
+6. FIXED ORDER (if z exists): costs["fixed_order"] * z
+```
+
+### Section 3: Substitution Semantics (CRITICAL)
+
+```
+SUBSTITUTION SEMANTICS (CRITICAL)
+
+Edge [p_from, p_to] means: p_from's demand can be served by p_to's inventory.
+This is "upward substitution" - premium product serves basic product's demand.
+
+S[p_from, p_to, l, t] = quantity of p_from's demand fulfilled by p_to
+
+Example: sub_edges = [["Basic", "Premium"]]
+- Basic can have its demand met by Premium's inventory
+- Premium CANNOT have its demand met by Basic (no reverse edge)
+
+For each product p, compute:
+- outbound: total substitution flow where p is the source (p sends demand out)
+- inbound: total substitution flow where p is the target (p receives demand in)
+
+Two key constraints involving substitution:
+1. demand_route: Cannot substitute more demand than the product actually has
+2. sales_conservation: Total sales + lost = demand + inbound - outbound
+```
+
+### Section 4: Boundary Conditions
+
+```
+BOUNDARY CONDITIONS SUMMARY
+
+- t = 1: Initialize I[p,l,1,a] = 0 for a < shelf_life[p]
+  (CRITICAL - without this, model exploits "free" inventory → objective = 0)
+  
+- t = T: No aging constraints (would reference t+1)
+
+- t <= lead_time: Fresh inflow = 0 (orders haven't arrived yet)
+  NEVER access Q[p,l,0] or negative time indices
+
+- Empty sub_edges: No S variables, no substitution constraints
+
+- Empty trans_edges: No X variables, no transshipment constraints
+```
+
+### Section 5: Instruction
+
+```
+[INSTRUCTION]
+Write a complete GurobiPy script that:
+1) Imports gurobipy (import gurobipy as gp; from gurobipy import GRB)
+2) Reads all parameters from `data` (already loaded)
+3) Creates all necessary decision variables with correct indices
+4) Sets objective function with all applicable cost terms
+5) Adds all constraints respecting boundary conditions
+6) Handles optional constraints based on what exists in data
+7) Sets Gurobi params: OutputFlag=0, Threads=1, Seed=0
+8) Prints status and objective (if OPTIMAL)
+
+Return ONLY Python code. No markdown, no comments, no explanations.
+```
 
 ---
 
-## 6. Relation to the Reference Solver and Time Limits
+## 4. ReLoop Agent Pipeline
 
-* `universal_retail_solver.py` is the **canonical reference model** for RetailOpt-190.
-* It uses a 60-second time limit (`TimeLimit = 60`) and a 1% relative MIP gap
-  (`MIPGap = 0.01`) for all instances, and suppresses solver logs (`OutputFlag = 0`).
-* `run_benchmark.py` runs the reference solver on all 190 JSON files and records:
+### Pipeline Overview (8 Prompt Modules)
 
-  * `OPTIMAL` when the solver proves optimality within the time limit and gap,
-  * `OPTIMAL (TL)` when it hits the time limit but returns a feasible incumbent,
-  * `TIMEOUT` when it hits the time limit with no incumbent solution,
-  * `INFEASIBLE` when the model is proven infeasible.
+| File | Step | Purpose |
+|------|------|---------|
+| 00 | Global Guardrails | Core rules, data format, variable naming, substitution semantics |
+| 01 | Task Contract | Lock optimization goal, controls, hard/soft constraints |
+| 02 | Model Spec Sheet | Define sets, decisions, objective terms, constraint families |
+| 03 | Constraint Templates | Derive mathematical LHS/RHS formulas |
+| 04 | Code Generation | Translate templates to GurobiPy code |
+| 05 | Format Repair (JSON) | Fix malformed JSON output |
+| 06 | Format Repair (Code) | Fix code that has markdown or syntax issues |
+| 07 | Repair Brief | Diagnose errors and suggest fixes based on probe results |
 
-These labels, together with objective values, form the baseline in
-`reloop/eval/benchmark_results.csv`. LLM-generated models are evaluated by
-running the same instances with the same solver settings and comparing
-feasibility rates and objective gaps to this reference.
+### Step 0: Global Guardrails
+
+Same content as baseline [CORE RULES], [DATA FORMAT], and [SUBSTITUTION SEMANTICS].
+
+### Step 1: Task Contract
+
+```json
+{
+  "optimize": "minimize total cost over horizon",
+  "controls": ["order quantities", "inventory allocation", "substitution flows"],
+  "hard_constraints": ["inventory flow", "capacity limits", "perishability"],
+  "soft_violations": [{"name": "lost_sales", "penalty": "costs.lost_sales"}],
+  "summary": "one sentence"
+}
+```
+
+### Step 2: Model Specification
+
+```json
+{
+  "sets": [{"name": "P", "description": "products", "source": "data.products"}],
+  "decisions": [{"name": "I", "type": "continuous", "indices": ["p","l","t","a"], 
+                 "meaning": "start-of-period inventory by remaining life"}],
+  "objective_terms": [{"name": "holding_cost", 
+                       "expression": "cost of END-OF-PERIOD inventory (I-y) for a>=2"}],
+  "constraint_families": [{"prefix": "sales_conservation", 
+                           "meaning": "sales + lost = effective demand"}]
+}
+```
+
+### Step 3: Constraint Templates
+
+```json
+{
+  "prefix": "sales_conservation",
+  "template_type": "BALANCE",
+  "indices": ["p","l","t"],
+  "equations": [{"lhs": "sum_a(y[p,l,t,a]) + L[p,l,t]", 
+                 "rhs": "D[p,l,t] + S_in[p,l,t] - S_out[p,l,t]", 
+                 "sense": "="}],
+  "notes": ["L must be included", "D = demand_curve[p][t-1] * demand_share[l]"]
+}
+```
+
+### Step 4: Code Generation
+
+Translates constraint templates into executable GurobiPy code. Emphasizes:
+- Safe data access patterns (nested network data)
+- Boundary condition handling (t=1 init, t=T no aging, lead time)
+- Optional feature detection (MOQ, pack size, transshipment, etc.)
+
+### Step 5: Repair Brief
+
+When errors occur, diagnose and suggest fixes:
+
+```json
+{
+  "target": "SPEC|CODEGEN",
+  "error_type": "INFEASIBLE|UNBOUNDED|RUNTIME|PROBE_FAILURE|WRONG_ANSWER",
+  "likely_cause": "one sentence",
+  "fix": "one sentence",
+  "failed_probes": ["initialization", "aging_dynamics"]
+}
+```
 
 ---
 
-## 7. Summary
+## 5. Semantic Probe Verification
 
-* `retail_spec.md` defines the **archetypes and structural intent** of the 38 retail scenarios in RetailOpt-190.
-* `retail_prompts.md` (this file) defines the **system and user prompt formats** used to
-  query LLM-based optimization agents on RetailOpt-190.
-* `universal_retail_solver.py` and `run_benchmark.py` provide the **reference implementation**
-  and evaluation pipeline.
+### How Probes Work (Code Execution, NOT Prompting)
 
-Together, these components ensure that:
+Probes verify constraints via **actual code execution**:
 
-* Every JSON instance has a clear business meaning.
-* Prompt text and JSON semantics are tightly aligned with the actual code.
-* Results from different LLMs are comparable under a fixed 60-second time limit and 1% MIP gap
+```
+┌─────────────────────────────────────────────────────────┐
+│  Step 1: Construct boundary test data                   │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │ data = {                                         │   │
+│  │   "demand": {"Basic": 100, "Premium": 0},       │   │
+│  │   "production_cap": {"Basic": 0, "Premium": 80} │   │
+│  │ }                                                │   │
+│  └─────────────────────────────────────────────────┘   │
+│                         ↓                               │
+│  Step 2: Execute LLM code via subprocess                │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │ result = subprocess.run(                         │   │
+│  │   [python, "-c", llm_generated_code],           │   │
+│  │   env={"DATA": probe_data}                      │   │
+│  │ )                                                │   │
+│  └─────────────────────────────────────────────────┘   │
+│                         ↓                               │
+│  Step 3: Check observable outcomes                      │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │ if status == UNBOUNDED → missing constraint     │   │
+│  │ if objective < expected → wrong implementation  │   │
+│  │ if objective in range → PASS                    │   │
+│  └─────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 14 Probes (8 Core + 6 Extended)
+
+| # | Probe | Mechanism | Detection Method |
+|---|-------|-----------|------------------|
+| 1 | `substitution_basic` | S variables | Objective range check |
+| 2 | `demand_route_constraint` | S_out ≤ demand | UNBOUNDED detection |
+| 3 | `no_substitution` | Empty edges | Spurious benefit detection |
+| 4 | `production_capacity` | Prod cap | Objective lower bound |
+| 5 | `storage_capacity` | Storage cap | INFEASIBLE detection |
+| 6 | `aging_dynamics` | Shelf-life | Waste cost verification |
+| 7 | `lost_sales_slack` | L variable | INFEASIBLE detection |
+| 8 | `inventory_nonnegativity` | I ≥ 0 | Negative inventory check |
+| 9 | `initialization` | t=1 init (I=0 for a<SL) | Objective = 0 detection |
+| 10 | `lead_time` | Lead time handling | Delivery timing |
+| 11 | `moq` | Minimum order quantity | MOQ enforcement |
+| 12 | `transshipment` | Network flows | Trans constraint |
+| 13 | `labor_capacity` | Labor constraints | Capacity check |
+| 14 | `waste_limit` | Global waste cap | Waste cap enforcement |
+
+### Critical Probes (Silent Failure Detection)
+
+| Probe | Common Error | Symptom |
+|-------|--------------|---------|
+| `initialization` | Missing `I[p,l,1,a]=0` for a < shelf_life | Objective ≈ 0 (free inventory) |
+| `holding_cost` | Using `I` instead of `I-y` | Objective 60% too low |
+
+### Key Insight
+
+Probes test **behavior**, not **code**. They work on any implementation without parsing.
+
+---
+
+## 6. Common Error Patterns and Fixes
+
+### Error Diagnosis Guide
+
+| Error Type | Symptom | Likely Cause | Fix |
+|------------|---------|--------------|-----|
+| INFEASIBLE | Solver status | Missing L in sales_conservation | Add L variable with lost_sales penalty |
+| UNBOUNDED | Solver status | Missing demand_route constraint | Add outbound ≤ demand constraint |
+| Objective = 0 | Multiple probes fail | Missing t=1 initialization | Add I[p,l,1,a]=0 for a < shelf_life |
+| Objective too low | holding_cost probe fails | Using I instead of (I-y) | Apply holding to end-of-period inventory |
+| Wrong answer | Objective differs >1% | Substitution direction wrong | Check edge [A,B] means A→B, not B→A |
+
+### Objective = 0 Diagnosis (CRITICAL)
+
+If multiple probes show objective = 0, check in order:
+
+1. **Missing initialization at t=1?**
+   - Without I[p,l,1,a]=0 for a<shelf_life, model gets "free" inventory
+   - This is the MOST COMMON cause of obj=0
+
+2. **Missing m.setObjective() call?**
+   - Objective must be set before optimize()
+
+3. **Empty objective expression?**
+   - Must accumulate costs in a variable before setting objective
+
+4. **Costs not read from data?**
+   - Use data["costs"]["lost_sales"][p], etc.
+
+---
+
+## 7. Evaluation Metrics
+
+| Metric | Definition | Formula |
+|--------|------------|---------|
+| **Execution Rate** | Code runs without runtime errors | `exec_ok / total` |
+| **Accuracy** | Status matches AND objective within 1% | `correct / total` |
+| **Silent Failure Rate** | Runs OK but wrong answer | `(exec_ok - correct) / exec_ok` |
+
+### Accuracy Criterion
+
+An instance is **correct** if:
+1. Solver status matches ground truth (both feasible, or both infeasible)
+2. For feasible instances: |y_pred - y_ref| / |y_ref| < 1%
+
+The 1% tolerance accounts for MIP solver behavior on complex instances (F6/F7 families).
+
+---
+
+## 8. Key Differences: Baseline vs ReLoop
+
+| Aspect | Baseline (Zero-shot) | ReLoop (Multi-step) |
+|--------|---------------------|---------------------|
+| Prompt count | 1 complete prompt | 8 modular prompts |
+| Interaction | Single LLM call | Multi-step pipeline |
+| Error handling | Full regeneration | Targeted repair based on probes |
+| Intermediate artifacts | None | Contract → Spec → Templates → Code |
+| Verification | Post-hoc probes only | Probes integrated in loop |
+
+### ReLoop Advantages
+
+1. **Structured reasoning**: Each step focuses on specific aspect (semantics → math → code)
+2. **Verifiable artifacts**: Intermediate outputs can be checked before proceeding
+3. **Targeted repair**: Failed probes identify WHICH constraint is wrong, enabling precise fixes
+
+```
