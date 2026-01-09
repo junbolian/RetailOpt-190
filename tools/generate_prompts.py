@@ -9,9 +9,8 @@ This script generates prompts for TWO evaluation modes:
    - For all baseline models (GPT-4, Claude, Qwen, etc.)
 
 2. ReLoop Agent:
-   - Uses: base_prompt + step_prompts (00-07)
+   - Uses: base_prompt + step_prompts (for Reloop model)
    - Multi-step pipeline with probes
-   - For Qwen2.5-Coder-14B primary experiments
 
 DESIGN PRINCIPLE:
 - Both Baseline and ReLoop receive the SAME semantic information
