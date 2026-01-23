@@ -31,26 +31,14 @@ Researchers can use this dataset to benchmark their own LLMs or optimization age
 
 Existing benchmarks (NL4Opt, MAMO, IndustryOR) focus on *translation fidelity*—whether models correctly parse optimization language. RetailOpt-190 targets a distinct axis: **compositional consistency**.
 
-| Benchmark | Scenarios | Multi-period | Compositional | Semantic Probes |
-|-----------|-----------|--------------|---------------|-----------------|
-| NL4Opt | ~100 | Few | No | No |
-| MAMO | ~800 | Some | No | No |
-| IndustryOR | 100 | Some | No | No |
-| **RetailOpt-190** | **190** | **All** | **Yes** | **Yes** |
+| Benchmark | Scenarios | Multi-period | Compositional |
+|-----------|-----------|--------------|---------------|
+| NL4Opt | ~100 | Few | No |
+| MAMO | ~800 | Some | No |
+| IndustryOR | 100 | Some | No |
+| **RetailOpt-190** | **190** | **All** | **Yes** |
 
 **Key insight**: Retail optimization is prone to *silent failures*—models that solve successfully but silently omit critical constraint couplings. RetailOpt-190 specifically stresses these failure modes.
-
----
-
-## Key Features
-
-| Feature | Description |
-|---------|-------------|
-| **Compositional Focus** | Difficulty arises from constraint *interactions*, not linguistic complexity |
-| **Solver Validation** | Every instance validated with reference MILP; ground truth recorded |
-| **Semantic Probes** | 14 lightweight tests that detect specific implementation errors |
-| **Universal Schema** | All instances share consistent JSON format for controlled comparison |
-| **Reproducible** | Deterministic generation from archetype specifications |
 
 ---
 
@@ -182,6 +170,35 @@ python eval/run_benchmark.py
 ```
 
 This executes the solver on all 190 JSON instances and saves results to `eval/benchmark_results.csv`.
+
+### 3. Use dataset to benchmark your own model
+
+```python
+import json
+
+# Load a prompt
+with open('scenarios/prompts/retail_f1_base_v0.scenario.txt', 'r') as f:
+    prompt = f.read()
+
+# Load corresponding data
+with open('scenarios/data/retail_f1_base_v0.json', 'r') as f:
+    data = json.load(f)
+
+# Send prompt to your LLM, get generated code
+generated_code = your_llm(prompt)
+
+# Execute generated code with data pre-loaded
+exec(generated_code, {'data': data})
+
+# Compare output with ground truth in eval/benchmark_results.csv
+```
+
+Ground truth results are stored in `eval/benchmark_results.csv` with columns:
+- `scenario`: Scenario name (e.g., `retail_f1_base_v0`)
+- `status`: Solver status (`OPTIMAL`, `INFEASIBLE`, etc.)
+- `objective`: Objective value as string
+- `objective_numeric`: Objective value as float
+- `time_sec`: Solve time in seconds
 
 ---
 
@@ -319,31 +336,6 @@ Full specification: `scenarios/spec/retail_spec.md`
 
 ---
 
-## Semantic Probes
-
-14 probes detect specific implementation errors by testing *behavior*, not code:
-
-| # | Probe | Mechanism | Detection Method |
-|---|-------|-----------|------------------|
-| 1 | `substitution_basic` | S variables | Objective range check |
-| 2 | `demand_route_constraint` | S_out <= demand | UNBOUNDED detection |
-| 3 | `no_substitution` | Empty edges | Spurious benefit detection |
-| 4 | `production_capacity` | Prod cap | Objective lower bound |
-| 5 | `storage_capacity` | Storage cap | INFEASIBLE detection |
-| 6 | `aging_dynamics` | Shelf-life | Waste cost verification |
-| 7 | `lost_sales_slack` | L variable | INFEASIBLE detection |
-| 8 | `nonnegativity` | I >= 0 | Negative inventory check |
-| 9 | `initialization` | t=1 init | Objective = 0 detection |
-| 10 | `lead_time` | Lead time | Delivery timing |
-| 11 | `moq` | Min order qty | MOQ enforcement |
-| 12 | `transshipment` | Network flows | Trans constraint |
-| 13 | `labor_capacity` | Labor limits | Capacity check |
-| 14 | `holding_cost` | End-of-period | Objective too low |
-
-**Most critical**: `initialization` (missing I[p,l,1,k]=0 causes objective near 0) and `holding_cost` (incorrect inventory timing causes objective ~60% too low).
-
----
-
 ## License
 
 - **Code**: MIT
@@ -356,11 +348,11 @@ Full specification: `scenarios/spec/retail_spec.md`
 If you use RetailOpt-190 in your research, please cite our paper:
 
 ```bibtex
-@article{lian2025reloop,
+@article{lian2026reloop,
   author    = {Junbo Jacob Lian and Yujun Sun and Huiling Chen and Chaoyu Zhang and Chung-Piaw Teo},
   title     = {ReLoop: Detecting Silent Failures in LLM-Generated Optimization Code via Behavioral Verification},
   journal   = {arXiv preprint},
-  year      = {2025}
+  year      = {2026}
 }
 ```
 
