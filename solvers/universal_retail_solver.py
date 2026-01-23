@@ -1,6 +1,6 @@
 # ==============================================================================
 # FILE: universal_retail_solver.py
-# LOCATION: ./solvers/
+# LOCATION: reloop/solvers/
 #
 # DESCRIPTION:
 #   The Universal Retail Solver (URS).
@@ -40,9 +40,9 @@ def load_data(json_path):
 
 
 def solve_scenario(data, summarize=True):
- 
+    # ==========================================
     # 1. Parameter Extraction
- 
+    # ==========================================
     T = int(data["periods"])
     products = list(data["products"])
     locations = list(data["locations"])
@@ -95,9 +95,9 @@ def solve_scenario(data, summarize=True):
                 demand[(p, l, t)] = d_val
                 total_demand_vol += d_val
 
- 
+    # ==========================================
     # 2. Model Initialization
- 
+    # ==========================================
     m = Model("universal_retail")
     m.setParam("OutputFlag", 0)
     m.setParam("TimeLimit", 60)
@@ -145,8 +145,9 @@ def solve_scenario(data, summarize=True):
 
     m.update()
 
+    # ==========================================
     # 4. Constraints
-
+    # ==========================================
     big_M = 1_000_000.0
 
     # Pack size + MOQ/fixed order trigger
@@ -270,9 +271,9 @@ def solve_scenario(data, summarize=True):
                     name=f"sales_conservation_{p}_{l}_{t}",
                 )
 
- 
+    # ==========================================
     # 5. Objective
- 
+    # ==========================================
     obj = 0.0
     for p in products:
         SL = shelf_life[p]

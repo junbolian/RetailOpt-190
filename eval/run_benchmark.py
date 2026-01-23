@@ -1,6 +1,6 @@
 # ==============================================================================
 # FILE: run_benchmark.py
-# LOCATION: ./eval/
+# LOCATION: reloop/eval/
 #
 # DESCRIPTION:
 #   Executes the Universal Retail Solver on all JSON instances in the
