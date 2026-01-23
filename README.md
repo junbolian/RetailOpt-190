@@ -38,7 +38,7 @@ Existing benchmarks (NL4Opt, MAMO, IndustryOR) focus on *translation fidelity*â€
 | IndustryOR | 100 | Some | No |
 | **RetailOpt-190** | **190** | **All** | **Yes** |
 
-**Key insight**: Retail optimization is prone to *silent failures*â€”models that solve successfully but silently omit critical constraint couplings. RetailOpt-190 specifically stresses these failure modes.
+**Key insight**: Retail optimization involves complex constraint interactions (perishability, substitution, capacity coupling, etc.) that are prone to subtle modeling errors. RetailOpt-190 is designed to expose these failure modes through compositional scenario design.
 
 ---
 
