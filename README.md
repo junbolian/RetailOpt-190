@@ -78,6 +78,8 @@ Each archetype is instantiated with 5 numerical variants (v0-v4), yielding **190
 
 ```
 RetailOpt-190/
+├── retailopt_190.parquet               # All-in-one dataset (Hugging Face format)
+├── retailopt_190.jsonl                 # All-in-one dataset (JSON Lines format)
 ├── scenarios/
 │   ├── data/                           # 190 JSON instances
 │   │   ├── retail_f1_base_v0.json
@@ -171,7 +173,31 @@ python eval/run_benchmark.py
 
 This executes the solver on all 190 JSON instances and saves results to `eval/benchmark_results.csv`.
 
-### 3. Use dataset to benchmark your own model
+### 3. Load dataset from Parquet (recommended)
+
+```python
+import pandas as pd
+import json
+
+# Load all-in-one dataset
+df = pd.read_parquet('retailopt_190.parquet')
+
+# Each row contains: scenario_id, prompt, data, reference_status, reference_objective
+for _, row in df.iterrows():
+    prompt = row['prompt']
+    data = json.loads(row['data'])  # Parse JSON string to dict
+
+    # Send prompt to your LLM
+    generated_code = your_llm(prompt)
+
+    # Execute with data pre-loaded
+    exec(generated_code, {'data': data})
+
+    # Compare with reference
+    print(f"Reference: {row['reference_status']}, {row['reference_objective']}")
+```
+
+### 4. Load from individual files
 
 ```python
 import json
@@ -360,6 +386,7 @@ If you use RetailOpt-190 in your research, please cite our paper:
 
 ## Related Resources
 
+- **Hugging Face Dataset**: [https://huggingface.co/datasets/Jacoblian/RetailOpt-190](https://huggingface.co/datasets/Jacoblian/RetailOpt-190) - Download dataset directly
 - **ReLoop Framework**: [https://github.com/junbolian/ReLoop](https://github.com/junbolian/ReLoop) - Complete implementation of the ReLoop verification pipeline
 - **Paper**: Link to be added upon publication
 
