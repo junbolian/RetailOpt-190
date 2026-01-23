@@ -6,7 +6,6 @@ size_categories:
 - n<1K
 task_categories:
 - text-generation
-- text2text-generation
 tags:
 - optimization
 - operations-research
@@ -158,7 +157,7 @@ Ground truth solutions are computed using a validated MILP solver (Gurobi) with 
 ### Citation
 
 ```bibtex
-@article{lian2025reloop,
+@article{lian2026reloop,
   author    = {Junbo Jacob Lian and Yujun Sun and Huiling Chen and Chaoyu Zhang and Chung-Piaw Teo},
   title     = {ReLoop: Detecting Silent Failures in LLM-Generated Optimization Code via Behavioral Verification},
   journal   = {arXiv preprint},

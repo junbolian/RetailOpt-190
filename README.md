@@ -25,6 +25,12 @@ Researchers can use this dataset to benchmark their own LLMs or optimization age
 
 **[https://github.com/junbolian/ReLoop](https://github.com/junbolian/ReLoop)**
 
+### Related Resources
+
+- **Hugging Face Dataset**: [https://huggingface.co/datasets/Jacoblian/RetailOpt-190](https://huggingface.co/datasets/Jacoblian/RetailOpt-190) - Download dataset directly
+- **ReLoop Framework**: [https://github.com/junbolian/ReLoop](https://github.com/junbolian/ReLoop) - Complete implementation of the ReLoop verification pipeline
+- **Paper**: Link to be added upon publication
+
 ---
 
 ## Why RetailOpt-190?
@@ -381,14 +387,6 @@ If you use RetailOpt-190 in your research, please cite our paper:
   year      = {2026}
 }
 ```
-
----
-
-## Related Resources
-
-- **Hugging Face Dataset**: [https://huggingface.co/datasets/Jacoblian/RetailOpt-190](https://huggingface.co/datasets/Jacoblian/RetailOpt-190) - Download dataset directly
-- **ReLoop Framework**: [https://github.com/junbolian/ReLoop](https://github.com/junbolian/ReLoop) - Complete implementation of the ReLoop verification pipeline
-- **Paper**: Link to be added upon publication
 
 ---
 
