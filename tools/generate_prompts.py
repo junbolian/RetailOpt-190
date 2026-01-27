@@ -81,14 +81,21 @@ DATA_SCHEMA = """
 
 DATA_ACCESS = """
 - The variable `data` is pre-loaded. Do NOT use file I/O.
-- Network data is nested: use data.get('network', {}).get('sub_edges', [])
-- Lists are 0-indexed
+- Lists are 0-indexed (period t in model uses index [t-1] in data arrays)
+
+CRITICAL - Network edges require tuple conversion for Gurobi:
+  sub_edges = [tuple(e) for e in data.get('network', {}).get('sub_edges', [])]
+  trans_edges = [tuple(e) for e in data.get('network', {}).get('trans_edges', [])]
 """.strip()
 
 OUTPUT_FORMAT = """
-- Output ONLY Python code
-- Use GurobiPy
-- Print status and objective
+- Import: import gurobipy as gp; from gurobipy import GRB
+- Set Gurobi params: m.Params.OutputFlag = 0; m.Params.Threads = 1; m.Params.Seed = 0
+- Print at end:
+  print(f"status: {{m.Status}}")
+  if m.Status == 2:
+      print(f"objective: {{m.ObjVal}}")
+- Output ONLY executable Python code. No markdown, no explanations.
 """.strip()
 
 
