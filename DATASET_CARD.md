@@ -38,7 +38,7 @@ dataset_info:
 
 ## Dataset Description
 
-- **Repository:** [https://github.com/junbolian/RetailOpt-190](https://github.com/junbolian/RetailOpt-190)
+- **Repository:** [https://github.com/Jacoblian/RetailOpt-190](https://github.com/Jacoblian/RetailOpt-190)
 - **Paper:** ReLoop: Detecting Silent Failures in LLM-Generated Optimization Code via Behavioral Verification
 - **Point of Contact:** Junbo Jacob Lian
 
@@ -90,7 +90,7 @@ from datasets import load_dataset
 import json
 
 # Load dataset
-dataset = load_dataset("junbolian/RetailOpt-190", split="test")
+dataset = load_dataset("Jacoblian/RetailOpt-190", split="test")
 
 # Access a sample
 sample = dataset[0]
@@ -109,7 +109,7 @@ print(data['products'])  # List of products
 from datasets import load_dataset
 import json
 
-dataset = load_dataset("junbolian/RetailOpt-190", split="test")
+dataset = load_dataset("Jacoblian/RetailOpt-190", split="test")
 
 for sample in dataset:
     # Get prompt and data
