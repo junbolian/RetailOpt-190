@@ -4,14 +4,28 @@
 
 ## 1. Prompt Architecture
 
-RetailOpt-190 uses **two prompt formats** for different evaluation modes:
+RetailOpt-190 uses **three prompt formats** for different evaluation scenarios:
 
-### Two Prompt Files Per Scenario
+### Three Prompt Files Per Scenario
 
-| File | Content | Used By |
-|------|---------|---------|
-| `{scenario_id}.scenario.txt` | Scenario + data schema + output format | Zero-shot baseline (single LLM call) |
-| `{scenario_id}.base.txt` | Scenario description only | ReLoop Agent (guardrails injected by step_prompts) |
+| File | Content | Data Location | Used By |
+|------|---------|---------------|---------|
+| `{scenario_id}.scenario.txt` | Scenario + data schema | External (runtime) | Schema-based evaluation |
+| `{scenario_id}.full.txt` | Scenario + full JSON data | In prompt | Data-embedded evaluation |
+| `{scenario_id}.base.txt` | Scenario description only | N/A | ReLoop Agent |
+
+### Why Two Data Formats?
+
+Most existing benchmarks (NL4Opt, MAMO, IndustryOR) embed data directly in prompts. RetailOpt-190 supports both approaches:
+
+| Format | Advantages | Use Case |
+|--------|------------|----------|
+| **Schema-based** (`.scenario.txt`) | Scalable for large data, tests data access patterns | Production scenarios |
+| **Data-embedded** (`.full.txt`) | Compatible with other benchmarks, no external data | Unified benchmark comparison |
+
+This dual-format design enables:
+1. **Fair comparison** with other benchmarks using the same text-to-solution paradigm
+2. **Realistic evaluation** of data handling capabilities with schema-based prompts
 
 ---
 

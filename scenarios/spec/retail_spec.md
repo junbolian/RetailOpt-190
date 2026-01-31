@@ -30,14 +30,26 @@ All instances share a **single JSON schema** and are solved by a **single univer
 
 ## 2. Prompt System
 
-### Two Evaluation Modes
+### Three Prompt Formats
 
-| Mode | Prompt | Used By | Description |
-|------|--------|---------|-------------|
-| Zero-shot Baseline | `{id}.scenario.txt` | GPT-4o, Claude, Qwen, DeepSeek, SIRL, ORLM | Single comprehensive prompt |
-| ReLoop Agent | `{id}.base.txt` + step_prompts | ReLoop (our method) | Multi-step pipeline with repair |
+RetailOpt-190 provides **three prompt formats** for different evaluation scenarios:
 
-### Zero-shot Baseline Prompt Structure
+| File | Content | Data Location | Use Case |
+|------|---------|---------------|----------|
+| `{id}.scenario.txt` | Scenario + data schema | External (runtime) | Schema-based evaluation |
+| `{id}.full.txt` | Scenario + full JSON data | In prompt | Data-embedded evaluation |
+| `{id}.base.txt` | Scenario description only | N/A | ReLoop Agent |
+
+### Why Two Data Formats?
+
+Most existing benchmarks (NL4Opt, MAMO, IndustryOR) embed data directly in prompts. RetailOpt-190 supports both:
+
+| Format | Field | Advantages | Use Case |
+|--------|-------|------------|----------|
+| **Schema-based** | `prompt_schema` | Scalable for large data, tests data access | Production scenarios |
+| **Data-embedded** | `prompt_full` | Compatible with other benchmarks | Unified evaluation |
+
+### Schema-based Prompt Structure (`.scenario.txt`)
 
 ```
 [SCENARIO]
@@ -60,7 +72,27 @@ All instances share a **single JSON schema** and are solved by a **single univer
 └── Write complete GurobiPy script...
 ```
 
-**Key Design Principle:** Minimal prompt - only give business narrative + data schema. Let LLM decide how to model.
+### Data-embedded Prompt Structure (`.full.txt`)
+
+```
+[SCENARIO]
+├── Family/Archetype/Scenario ID
+
+[BUSINESS DESCRIPTION]
+├── Business narrative
+└── Structure cues
+
+[DATA]
+├── Full JSON data embedded in prompt
+
+[OUTPUT FORMAT]
+├── GurobiPy, print format
+
+[TASK]
+└── Parse JSON and solve...
+```
+
+**Key Design Principle:** Minimal prompt - only give business narrative + data. Let LLM decide how to model.
 
 ### What We Give vs DON'T Give
 

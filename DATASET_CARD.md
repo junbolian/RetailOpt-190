@@ -19,7 +19,9 @@ dataset_info:
   features:
     - name: scenario_id
       dtype: string
-    - name: prompt
+    - name: prompt_schema
+      dtype: string
+    - name: prompt_full
       dtype: string
     - name: data
       dtype: string
@@ -63,6 +65,24 @@ The benchmark spans 8 scenario families and 38 archetypes covering core retail p
 
 English
 
+## Two Prompt Formats
+
+RetailOpt-190 provides **two prompt formats** for different evaluation scenarios:
+
+| Format | Field | Data Location | Use Case |
+|--------|-------|---------------|----------|
+| **Schema-based** | `prompt_schema` | External (runtime) | Large datasets, tests data access patterns |
+| **Data-embedded** | `prompt_full` | In prompt | Direct comparison with other benchmarks |
+
+### Why Two Formats?
+
+Most existing benchmarks (NL4Opt, MAMO, IndustryOR) embed data directly in prompts. RetailOpt-190 supports both approaches to enable:
+
+1. **Fair comparison**: Use `prompt_full` when comparing with other benchmarks in unified evaluation frameworks
+2. **Scalability**: Use `prompt_schema` for production scenarios with large datasets
+
+Both formats provide the **same semantic information**—only the data delivery method differs.
+
 ## Dataset Structure
 
 ### Data Fields
@@ -70,7 +90,8 @@ English
 | Field | Type | Description |
 |-------|------|-------------|
 | `scenario_id` | string | Unique scenario identifier (e.g., `retail_f1_base_v0`) |
-| `prompt` | string | Natural-language problem description with structure cues |
+| `prompt_schema` | string | Schema-based prompt (data loaded at runtime via `data` variable) |
+| `prompt_full` | string | Data-embedded prompt (full JSON data in prompt) |
 | `data` | string | JSON-formatted instance data (parse with `json.loads()`) |
 | `reference_status` | string | Ground truth solver status (`OPTIMAL`, `INFEASIBLE`, etc.) |
 | `reference_objective` | float | Ground truth objective value (null if infeasible) |
@@ -89,21 +110,17 @@ English
 from datasets import load_dataset
 import json
 
-# Load dataset
 dataset = load_dataset("Jacoblian/RetailOpt-190", split="test")
-
-# Access a sample
 sample = dataset[0]
-print(sample['scenario_id'])  # e.g., "retail_f1_base_v0"
-print(sample['prompt'][:200])  # First 200 chars of prompt
 
-# Parse JSON data
-data = json.loads(sample['data'])
-print(data['periods'])  # Number of time periods
-print(data['products'])  # List of products
+print(sample['scenario_id'])        # e.g., "retail_f1_base_v0"
+print(sample['prompt_schema'][:200])  # Schema-based prompt
+print(sample['prompt_full'][:200])    # Data-embedded prompt
 ```
 
-### Benchmarking Your Model
+### Option A: Schema-based Evaluation
+
+Use `prompt_schema` when you need external data loading (matches production scenarios):
 
 ```python
 from datasets import load_dataset
@@ -112,17 +129,30 @@ import json
 dataset = load_dataset("Jacoblian/RetailOpt-190", split="test")
 
 for sample in dataset:
-    # Get prompt and data
-    prompt = sample['prompt']
+    prompt = sample['prompt_schema']
     data = json.loads(sample['data'])
 
-    # Generate code with your LLM
     generated_code = your_llm(prompt)
+    exec(generated_code, {'data': data})  # Data pre-loaded
 
-    # Execute generated code
-    exec(generated_code, {'data': data})
+    print(f"Reference: {sample['reference_status']}, {sample['reference_objective']}")
+```
 
-    # Compare with ground truth
+### Option B: Data-embedded Evaluation
+
+Use `prompt_full` for direct text-to-solution evaluation (compatible with other benchmarks):
+
+```python
+from datasets import load_dataset
+
+dataset = load_dataset("Jacoblian/RetailOpt-190", split="test")
+
+for sample in dataset:
+    prompt = sample['prompt_full']  # Data is already in prompt
+
+    generated_code = your_llm(prompt)
+    exec(generated_code)  # Code parses JSON from prompt itself
+
     print(f"Reference: {sample['reference_status']}, {sample['reference_objective']}")
 ```
 

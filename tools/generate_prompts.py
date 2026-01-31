@@ -1,23 +1,29 @@
 """
 Generate scenario prompt files for LLM evaluation on RetailOpt-190.
 
-This script generates prompts for TWO evaluation modes:
+This script generates prompts for THREE formats:
 
-1. Zero-shot Baseline:
-   - Uses: {scenario_id}.scenario.txt (includes guardrails)
-   - Single LLM call
-   - For all baseline models (GPT-4, Claude, Qwen, etc.)
+1. Schema-based (.scenario.txt):
+   - Contains: Business description + JSON schema (types only) + data access instructions
+   - Data loading: External (runtime via `data` variable)
+   - Use case: Large datasets, production scenarios
+   - For: All baseline models with external data loading
 
-2. ReLoop Agent:
-   - Uses: base_prompt + step_prompts (00-07)
-   - Multi-step pipeline with probes
-   - For Qwen2.5-Coder-14B primary experiments
+2. Data-embedded (.full.txt):
+   - Contains: Business description + FULL JSON data embedded in prompt
+   - Data loading: None needed (data is in prompt)
+   - Use case: Direct comparison with other benchmarks (NL4Opt, MAMO, etc.)
+   - For: Text-to-solution evaluation without external data
 
-DESIGN PRINCIPLE:
-- Both Baseline and ReLoop receive the SAME semantic information
-- Difference is only in GUIDANCE STYLE (one-shot vs multi-step)
-- NO code templates given - only semantic descriptions
-- Prompt must be UNAMBIGUOUS so a capable LLM can write correct code
+3. Agent base (.base.txt):
+   - Contains: Business description only (no schema, no data)
+   - Use case: Multi-step agents that inject their own guardrails
+   - For: ReLoop and similar agentic pipelines
+
+DESIGN RATIONALE:
+- Schema-based: Scalable for large data, tests data access patterns
+- Data-embedded: Compatible with other benchmarks for fair comparison
+- Both provide SAME semantic information, different delivery style
 """
 
 from __future__ import annotations
@@ -133,6 +139,44 @@ Scenario ID: {scenario_id}
 
 [BUSINESS DESCRIPTION]
 {description}
+""".strip()
+
+
+# Template for Data-embedded prompt (full data in prompt)
+SCENARIO_TEMPLATE_FULL = """[SCENARIO]
+Family: {family_id} ({family_name})
+Archetype: {archetype_id}
+Scenario ID: {scenario_id}
+
+[BUSINESS DESCRIPTION]
+{description}
+
+[DATA]
+The following JSON contains all instance data. Parse it directly in your code.
+
+```json
+{json_data}
+```
+
+[OUTPUT FORMAT]
+{output_format}
+
+[TASK]
+Write a GurobiPy script that:
+1. Parses the JSON data above (use json.loads on the string)
+2. Models and solves the optimization problem
+3. Prints status and objective value
+""".strip()
+
+
+OUTPUT_FORMAT_FULL = """
+- Import: import gurobipy as gp; from gurobipy import GRB; import json
+- Set Gurobi params: m.Params.OutputFlag = 0; m.Params.Threads = 1; m.Params.Seed = 0
+- Print at end:
+  print(f"status: {{m.Status}}")
+  if m.Status == 2:
+      print(f"objective: {{m.ObjVal}}")
+- Output ONLY executable Python code. No markdown, no explanations.
 """.strip()
 
 
@@ -337,15 +381,33 @@ def main():
             f_out.write(agent_prompt)
             f_out.write("\n")
 
-        print(f"[OK] {scenario_id} -> .scenario.txt (zero-shot) + .base.txt (agent)")
+        # Generate Data-embedded prompt (full data in prompt)
+        json_data_str = json.dumps(data, indent=2, ensure_ascii=False)
+        full_prompt = SCENARIO_TEMPLATE_FULL.format(
+            family_id=family_id,
+            family_name=family_name,
+            archetype_id=archetype_id,
+            scenario_id=scenario_id,
+            description=description,
+            json_data=json_data_str,
+            output_format=OUTPUT_FORMAT_FULL,
+        )
+
+        out_file_full = prompt_dir / f"{scenario_id}.full.txt"
+        with open(out_file_full, "w", encoding="utf-8") as f_out:
+            f_out.write(full_prompt)
+            f_out.write("\n")
+
+        print(f"[OK] {scenario_id} -> .scenario.txt + .base.txt + .full.txt")
 
         ok_count += 1
 
     print(f"\nDone. Generated={ok_count}, Skipped={skip_count}")
     print(f"Output directory: {prompt_dir}")
-    print("[NOTE] Generated two files per scenario:")
-    print("  - {scenario_id}.scenario.txt : Zero-shot baseline (includes guardrails)")
-    print("  - {scenario_id}.base.txt     : ReLoop Agent (scenario only, guardrails injected by step_prompts)")
+    print("[NOTE] Generated THREE files per scenario:")
+    print("  - {scenario_id}.scenario.txt : Schema-based (data loaded at runtime)")
+    print("  - {scenario_id}.full.txt     : Data-embedded (full JSON in prompt)")
+    print("  - {scenario_id}.base.txt     : Agent base (scenario only)")
 
 
 if __name__ == "__main__":

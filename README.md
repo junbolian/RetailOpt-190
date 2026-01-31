@@ -89,20 +89,20 @@ RetailOpt-190/
 ├── scenarios/
 │   ├── data/                           # 190 JSON instances
 │   │   ├── retail_f1_base_v0.json
-│   │   ├── retail_f1_base_v1.json
 │   │   └── ...
-│   ├── prompts/                        # 380 prompt files (2 per scenario)
-│   │   ├── {scenario_id}.scenario.txt  # Complete prompt (for zero-shot baseline)
-│   │   └── {scenario_id}.base.txt      # Scenario only (for multi-step agents)
+│   ├── prompts/                        # 570 prompt files (3 per scenario)
+│   │   ├── {scenario_id}.scenario.txt  # Schema-based (data loaded at runtime)
+│   │   ├── {scenario_id}.full.txt      # Data-embedded (full JSON in prompt)
+│   │   └── {scenario_id}.base.txt      # Agent base (scenario only)
 │   └── spec/
-│       ├── archetypes.yaml             # 38 archetype definitions with business narratives
+│       ├── archetypes.yaml             # 38 archetype definitions
 │       ├── retail_spec.md              # Full MILP specification
-│       └── retail_prompts.md           # Prompt template documentation
+│       └── retail_prompts.md           # Prompt documentation
 ├── solvers/
 │   └── universal_retail_solver.py      # Reference MILP solver (ground truth)
 ├── eval/
 │   ├── run_benchmark.py                # Batch evaluation script
-│   └── benchmark_results.csv           # Ground truth solver results (190 rows)
+│   └── benchmark_results.csv           # Ground truth solver results
 ├── tools/
 │   └── generate_prompts.py             # Prompt generation from archetypes
 ├── requirements.txt
@@ -114,25 +114,64 @@ RetailOpt-190/
 
 ## Prompt System
 
-RetailOpt-190 provides two prompt formats for different evaluation modes:
+RetailOpt-190 provides **three prompt formats** for different evaluation scenarios:
 
-### 1. Zero-shot Baseline (`.scenario.txt`)
+### Why Two Data Formats?
 
-Complete single-prompt evaluation containing:
-- `[SCENARIO]` - Family, archetype, and scenario ID
-- `[BUSINESS DESCRIPTION]` - Full narrative with structure cues
-- `[DATA SCHEMA]` - JSON structure (types only, not actual values)
-- `[DATA ACCESS]` - Safe access patterns for nested data
-- `[OUTPUT FORMAT]` - Output requirements (GurobiPy, print status/objective)
-- `[TASK]` - "Write a GurobiPy script..."
+| Format | Data Location | Use Case |
+|--------|---------------|----------|
+| **Schema-based** | External (runtime) | Large datasets, production scenarios |
+| **Data-embedded** | In prompt | Direct comparison with other benchmarks |
 
-### 2. Multi-step Agent (`.base.txt`)
+Most existing benchmarks (NL4Opt, MAMO, IndustryOR) embed data directly in prompts. RetailOpt-190 supports both approaches:
+- **Schema-based**: Scalable for large data, tests data access patterns
+- **Data-embedded**: Compatible with other benchmarks for fair comparison in unified evaluation frameworks
 
-Minimal prompt for agentic workflows containing only:
-- `[SCENARIO]` - Family, archetype, and scenario ID
-- `[BUSINESS DESCRIPTION]` - Business narrative and structure cues
+### 1. Schema-based (`.scenario.txt`)
 
-Both formats provide the **same semantic information**; the difference is in guidance style (one-shot vs multi-step).
+Data is loaded externally at runtime via `data` variable.
+
+```
+[SCENARIO] - Family, archetype, scenario ID
+[BUSINESS DESCRIPTION] - Full narrative with structure cues
+[DATA SCHEMA] - JSON structure (types only, NOT actual values)
+[DATA ACCESS] - How to access the pre-loaded `data` variable
+[OUTPUT FORMAT] - GurobiPy requirements
+[TASK] - Write optimization script
+```
+
+**Advantages**: Handles large datasets, tests realistic data access patterns.
+
+### 2. Data-embedded (`.full.txt`)
+
+Complete JSON data embedded directly in the prompt.
+
+```
+[SCENARIO] - Family, archetype, scenario ID
+[BUSINESS DESCRIPTION] - Full narrative with structure cues
+[DATA] - Full JSON data embedded in prompt
+[OUTPUT FORMAT] - GurobiPy requirements
+[TASK] - Parse JSON and solve
+```
+
+**Advantages**: No external data loading, compatible with text-to-solution benchmarks.
+
+### 3. Agent Base (`.base.txt`)
+
+Minimal prompt for multi-step agentic workflows.
+
+```
+[SCENARIO] - Family, archetype, scenario ID
+[BUSINESS DESCRIPTION] - Business narrative and structure cues
+```
+
+**Use case**: ReLoop and similar agents that inject their own guardrails.
+
+### Semantic Equivalence
+
+All three formats provide the **same semantic information**. The difference is only in:
+- **Data delivery**: External vs embedded
+- **Guidance style**: Full instructions vs minimal
 
 ---
 
@@ -188,19 +227,20 @@ import json
 # Load all-in-one dataset
 df = pd.read_parquet('retailopt_190.parquet')
 
-# Each row contains: scenario_id, prompt, data, reference_status, reference_objective
+# Columns: scenario_id, prompt_schema, prompt_full, data, reference_status, reference_objective
+
+# Option A: Schema-based evaluation (data loaded at runtime)
 for _, row in df.iterrows():
-    prompt = row['prompt']
-    data = json.loads(row['data'])  # Parse JSON string to dict
-
-    # Send prompt to your LLM
+    prompt = row['prompt_schema']
+    data = json.loads(row['data'])
     generated_code = your_llm(prompt)
+    exec(generated_code, {'data': data})  # Data pre-loaded
 
-    # Execute with data pre-loaded
-    exec(generated_code, {'data': data})
-
-    # Compare with reference
-    print(f"Reference: {row['reference_status']}, {row['reference_objective']}")
+# Option B: Data-embedded evaluation (no external data needed)
+for _, row in df.iterrows():
+    prompt = row['prompt_full']  # Data is already in prompt
+    generated_code = your_llm(prompt)
+    exec(generated_code)  # Code parses JSON from prompt itself
 ```
 
 ### 4. Load from individual files
@@ -208,21 +248,21 @@ for _, row in df.iterrows():
 ```python
 import json
 
-# Load a prompt
-with open('scenarios/prompts/retail_f1_base_v0.scenario.txt', 'r') as f:
+scenario_id = 'retail_f1_base_v0'
+
+# Option A: Schema-based (.scenario.txt) - requires data loading
+with open(f'scenarios/prompts/{scenario_id}.scenario.txt', 'r') as f:
     prompt = f.read()
-
-# Load corresponding data
-with open('scenarios/data/retail_f1_base_v0.json', 'r') as f:
+with open(f'scenarios/data/{scenario_id}.json', 'r') as f:
     data = json.load(f)
-
-# Send prompt to your LLM, get generated code
 generated_code = your_llm(prompt)
-
-# Execute generated code with data pre-loaded
 exec(generated_code, {'data': data})
 
-# Compare output with ground truth in eval/benchmark_results.csv
+# Option B: Data-embedded (.full.txt) - no external data needed
+with open(f'scenarios/prompts/{scenario_id}.full.txt', 'r') as f:
+    prompt = f.read()  # Data is embedded in prompt
+generated_code = your_llm(prompt)
+exec(generated_code)  # Code parses JSON internally
 ```
 
 Ground truth results are stored in `eval/benchmark_results.csv` with columns:
