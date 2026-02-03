@@ -1,36 +1,34 @@
-# RetailOpt-190: Comprehensive Retail Supply Chain Benchmark
+# RetailOpt-190: Retail Supply Chain Benchmark
 
 ---
 
 ## 1. Overview
 
-RetailOpt-190 evaluates **text-to-optimization agents** on **38 retail operations archetypes**, expanded into **190 solver-validated instances** via controlled perturbations.
+RetailOpt-190 is a benchmark dataset for evaluating **text-to-optimization** methods on **38 retail operations archetypes**, expanded into **190 solver-validated instances** via controlled perturbations.
 
-### Key Features
+### Dataset Summary
 
 | Feature | Description |
 |---------|-------------|
 | **Instances** | 38 archetypes × 5 variants = 190 |
-| **Ground Truth** | Universal Retail Solver (URS) |
-| **Semantic Probes** | 8 boundary tests via code execution |
-| **Compositional Focus** | Tests constraint interactions, not just isolated mechanisms |
+| **Ground Truth** | Universal Retail Solver (Gurobi MILP) |
+| **Domain** | Retail supply chain optimization |
+| **Format** | JSON data + text prompts |
 
 All instances share a **single JSON schema** and are solved by a **single universal MILP formulation**.
 
 ### Comparison with Existing Benchmarks
 
-| Benchmark | Scenarios | Multi-period | Domain | Compositional | Semantic Probes |
-|-----------|-----------|--------------|--------|---------------|-----------------|
-| NL4Opt | ~100 | Few | General OR | ✗ | ✗ |
-| MAMO | ~800 | Some | General OR | ✗ | ✗ |
-| IndustryOR | 100 | Some | Industrial | ✗ | ✗ |
-| **RetailOpt-190** | 190 | All | Supply Chain | ✓ | ✓ |
+| Benchmark | Scenarios | Multi-period | Domain | Compositional |
+|-----------|-----------|--------------|--------|---------------|
+| NL4Opt | ~100 | Few | General OR | ✗ |
+| MAMO | ~800 | Some | General OR | ✗ |
+| IndustryOR | 100 | Some | Industrial | ✗ |
+| **RetailOpt-190** | 190 | All | Supply Chain | ✓ |
 
 ---
 
-## 2. Prompt System
-
-### Three Prompt Formats
+## 2. Prompt Formats
 
 RetailOpt-190 provides **three prompt formats** for different evaluation scenarios:
 
@@ -38,7 +36,7 @@ RetailOpt-190 provides **three prompt formats** for different evaluation scenari
 |------|---------|---------------|----------|
 | `{id}.scenario.txt` | Scenario + data schema | External (runtime) | Schema-based evaluation |
 | `{id}.full.txt` | Scenario + full JSON data | In prompt | Data-embedded evaluation |
-| `{id}.base.txt` | Scenario description only | N/A | ReLoop Agent |
+| `{id}.base.txt` | Scenario description only | External (runtime) | Agentic workflows |
 
 ### Why Two Data Formats?
 
@@ -92,155 +90,29 @@ Most existing benchmarks (NL4Opt, MAMO, IndustryOR) embed data directly in promp
 └── Parse JSON and solve...
 ```
 
-**Key Design Principle:** Minimal prompt - only give business narrative + data. Let LLM decide how to model.
-
-### What We Give vs DON'T Give
-
-| Give | DON'T Give |
-|------|------------|
-| Business Narrative | Decision variables |
-| Data Schema (structure) | Objective function formula |
-| Data Access | Constraint formulas |
-| Output Format | Boundary conditions |
-| | Common error warnings |
-
-### ReLoop Agent Pipeline
-
-```
-Input: {scenario_id}.base.txt (scenario only)
-       ↓
-Step 0: Data Profile        → Parameter roles (automatic)
-Step 1: Problem Understanding → JSON: objective, decisions, constraints
-Step 2: Math Specification   → JSON: sets, variables, formulas
-Step 3: Code Generation     → Python code
-       ↓
-[Semantic Probes] → Step 4-5: Repair (if failed)
-       ↓
-   Results
-```
-
 ---
 
-## 3. Data Usage Principle
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│  What LLM sees: Data Schema (structure only)                    │
-│  ═══════════════════════════════════════════                    │
-│  - Field names, types, meanings                                 │
-│  - Indexing conventions (0-indexed, etc.)                       │
-│  - Access patterns                                              │
-│                                                                 │
-│  What LLM does NOT see: Full Data                               │
-│  ════════════════════════════════════                           │
-│  - Actual demand values                                         │
-│  - Actual cost values                                           │
-│  - Complete 52-week arrays                                      │
-│                                                                 │
-│  Full data is ONLY used for: Code execution + Verification      │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Data Flow by Step
-
-| Step | LLM Sees | Full Data Used For |
-|------|----------|-------------------|
-| 1-3 (Modeling) | Narrative + Schema | - |
-| 4 (Verification) | - | Execute code, sensitivity tests |
-| 5 (Repair) | Code + "demand anomaly" | - |
-
-**Key insight**: LLM never sees actual data values. It only knows the structure. Verification uses full data to test code behavior, but only reports *which parameter* failed, not the values.
-
----
-
-## 4. Evaluation Metrics
+## 3. Evaluation Metrics
 
 | Metric | Definition | Formula |
 |--------|------------|---------|
 | **Execution Rate** | Code runs without runtime errors | `exec_ok / total` |
-| **Accuracy** | Status matches AND objective within 1% | `correct / total` |
-| **Silent Failure Rate** | Runs OK but wrong answer | `(exec_ok - correct) / exec_ok` |
+| **Accuracy** | Status matches AND objective within tolerance | `correct / total` |
 
 ### Accuracy Criterion
 
 An instance is **correct** if:
 1. Solver status matches ground truth (both feasible, or both infeasible)
-2. For feasible instances: $|y_{pred} - y_{ref}| / |y_{ref}| < 1\%$
+2. For feasible instances: |y_pred - y_ref| / |y_ref| < ε
 
-The 1% tolerance accounts for MIP solver behavior on complex instances (F6/F7), where the 60-second time limit may yield near-optimal solutions.
-
----
-
-## 5. Silent Failure Problem
-
-### Definition
-
-**Silent Failure:** Code that executes successfully and returns OPTIMAL status, but produces incorrect solutions due to constraint semantic errors.
-
-### Why It Matters
-
-| Failure Type | Detection | Impact |
-|--------------|-----------|--------|
-| Syntax Error | Automatic | Easy to fix |
-| Runtime Error | Automatic | Easy to fix |
-| INFEASIBLE | Solver reports | Debuggable |
-| **Silent Failure** | **Requires verification** | **Undetectable without probes** |
-
-### Common Causes
-
-| Error Type | Frequency | Example |
-|------------|-----------|---------|
-| Substitution direction | ~35% | Edge [A,B] misread |
-| Missing constraint | ~20% | No demand_route → UNBOUNDED |
-| Wrong holding cost | ~20% | Using I instead of I-y |
-| Missing initialization | ~15% | No I[p,l,1,a]=0 → obj=0 |
-| Boundary errors | ~10% | t=1/t=T edge cases |
+| Family | Problem Type | Tolerance (ε) |
+|--------|--------------|---------------|
+| F1–F5, F7–F8 | LP / easy MIP | 0.01% |
+| F6 | Hard MIP (MOQ, pack-size) | 10% |
 
 ---
 
-## 6. Semantic Probes
-
-### How Probes Work (Code Execution, NOT Prompting)
-
-Probes verify constraints by **running the generated code** with specially constructed test data:
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  1. Construct boundary test data                        │
-│     → e.g., zero production for Basic, 80 for Premium   │
-│                                                         │
-│  2. Execute LLM code via subprocess                     │
-│     → subprocess.run([python, "-c", code], env={data})  │
-│                                                         │
-│  3. Check observable outcomes                           │
-│     → UNBOUNDED = missing demand_route constraint       │
-│     → Objective too low = wrong substitution direction  │
-│     → INFEASIBLE = missing slack variable               │
-└─────────────────────────────────────────────────────────┘
-```
-
-### 8 Core Probes
-
-| # | Probe | Mechanism | Detection Method |
-|---|-------|-----------|------------------|
-| 1 | `substitution_basic` | S variables | Objective range check |
-| 2 | `demand_route_constraint` | S_out ≤ demand | UNBOUNDED detection |
-| 3 | `no_substitution` | Empty edges | Spurious benefit detection |
-| 4 | `production_capacity` | Prod cap | Objective lower bound |
-| 5 | `storage_capacity` | Storage cap | INFEASIBLE detection |
-| 6 | `aging_dynamics` | Shelf-life | Waste cost verification |
-| 7 | `lost_sales_slack` | L variable | INFEASIBLE detection |
-| 8 | `inventory_nonnegativity` | I ≥ 0 | Negative inventory check |
-
-### Key Insight
-
-Probes test **behavior**, not **code**. They work on any implementation without parsing.
-
----
-
-## 7. Scenario Families
+## 4. Scenario Families
 
 | Family | Name | Archetypes | Key Mechanisms |
 |--------|------|------------|----------------|
@@ -255,16 +127,9 @@ Probes test **behavior**, not **code**. They work on any implementation without 
 
 **Total:** 38 archetypes × 5 variants = **190 instances**
 
-### Difficulty Progression
-
-- **F1-F4**: Single-mechanism scenarios (baseline difficulty)
-- **F5-F8**: Multi-constraint interactions (compositional difficulty)
-
-Expected pattern: All methods similar on F1-F4; ReLoop leads on F5-F8.
-
 ---
 
-## 8. JSON Schema
+## 5. JSON Schema
 
 Each instance has this structure:
 
@@ -321,22 +186,17 @@ Each instance has this structure:
 # Network data is NESTED - use safe access
 sub_edges = data.get('network', {}).get('sub_edges', [])
 trans_edges = data.get('network', {}).get('trans_edges', [])
-# DO NOT use data['sub_edges'] directly - causes KeyError!
 
-# demand_share is location-only (NOT nested by product)
-demand[p,l,t] = data['demand_curve'][p][t-1] * data['demand_share'][l]
+# Demand calculation
+demand[p, l, t] = data['demand_curve'][p][t-1] * data['demand_share'][l]
 
-# production_cap is 0-indexed list
-prod_cap = data['production_cap'][p][t-1]  # Access with [t-1]
-
-# Optional fields - use .get() with defaults
-moq = data.get('constraints', {}).get('moq', 0)
-fixed_order = data.get('costs', {}).get('fixed_order', 0)
+# Production capacity (0-indexed list)
+prod_cap = data['production_cap'][p][t-1]
 ```
 
 ---
 
-## 9. Solver Settings
+## 6. Solver Settings
 
 | Parameter | Value | Purpose |
 |-----------|-------|---------|
@@ -345,50 +205,3 @@ fixed_order = data.get('costs', {}).get('fixed_order', 0)
 | OutputFlag | 0 | Suppress solver logs |
 | Threads | 1 | Reproducibility |
 | Seed | 0 | Reproducibility |
-
-### Status Mapping
-
-| Status | Meaning | Has Solution |
-|--------|---------|--------------|
-| OPTIMAL | Proven optimal | ✓ |
-| TIME_LIMIT | Time limit with solution | ✓ (near-optimal) |
-| INFEASIBLE | No feasible solution | ✗ |
-
----
-
-## 10. Actual Test Results
-
-### Baseline vs ReLoop Comparison (Claude Opus 4.5)
-
-#### Test 1: retail_f1_52_weeks_v0 (Core Operations)
-
-| Metric | Baseline | ReLoop |
-|--------|----------|--------|
-| Objective | 1,006,432.00 | 1,006,432.00 |
-| Ground Truth | 1,006,432.00 | 1,006,432.00 |
-| **Gap** | **0.00%** | **0.00%** |
-| Layers Passed | 3/7 | 3/7 |
-
-#### Test 2: retail_f5_ultimate_stress_v0 (Stress Test)
-
-| Metric | Baseline | ReLoop |
-|--------|----------|--------|
-| Objective | 702,188.80 | 702,188.80 |
-| Ground Truth | 694,823.00 | 694,823.00 |
-| **Gap** | **1.06%** | **1.06%** |
-| Layers Passed | 7/7 | 7/7 |
-
-### Comparison: GPT-5.1 vs Claude Opus 4.5
-
-| Model | Scenario | Baseline Gap | ReLoop Gap |
-|-------|----------|--------------|------------|
-| Claude Opus 4.5 | retail_f1_52_weeks_v0 | 0.00% | 0.00% |
-| GPT-5.1 | retail_f1_52_weeks_v0 | 2.54% | 2.87% |
-
-### Key Findings
-
-1. **Strong models achieve near-optimal results** - Claude Opus 4.5 achieves ~0-1% gap even with single-shot baseline
-2. **GPT-5.1 shows 2.54% gap** - Proves prompts don't leak answers (if leaked, all models would get ~0%)
-3. **L4 "NO EFFECT" can be false positives** - Slack constraints show no effect but are correctly implemented
-4. **Final metric is objective gap** - Layer count is diagnostic, < 1% gap determines correctness
-5. **ReLoop value increases with model capability gap** - More value for weaker models on complex scenarios
