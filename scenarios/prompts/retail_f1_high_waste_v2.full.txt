@@ -35,7 +35,7 @@ Structure cues:
 - Storage capacity: sum over products of (cold_usage[p] * total_inventory[p,l,t]) <= cold_capacity[l]. These limits must be respected.
 - The substitution pattern (Basic's demand served by Premium), absence of transshipment, zero lead times, and effectively non-binding labor capacities are the same as in the baseline scenario.
 - The only intended structural change is in the cost weights: waste costs in the JSON are much larger, so discarding inventory is heavily discouraged, but the constraint system itself is not altered.
-- The objective continues to minimize the sum of holding costs, waste costs, and lost sales penalties over all products, locations, and periods.
+- The objective continues to minimize the sum of purchasing costs, holding costs, waste costs, and lost sales penalties over all products, locations, and periods.
 
 [DATA]
 The following JSON contains all instance data. Parse it directly in your code.

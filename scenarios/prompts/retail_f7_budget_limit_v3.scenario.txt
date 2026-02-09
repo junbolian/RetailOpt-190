@@ -36,7 +36,7 @@ Structure cues:
 - Inventory balance for each product, location, and period follows the standard pattern with production or inbound shipments, outbound shipments, sales, and waste, and inventory must remain non-negative.
 - The budget constraint must be encoded so that spending above the budget is not allowed in any period.
 - The transshipment network and lead times match the base network archetype for this family.
-- The objective is to minimize total cost while respecting the period-by-period budget caps.
+- The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while respecting the period-by-period budget caps.
 
 [DATA SCHEMA]
 {

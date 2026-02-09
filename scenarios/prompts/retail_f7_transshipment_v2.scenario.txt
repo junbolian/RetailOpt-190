@@ -36,7 +36,7 @@ Structure cues:
 - Transshipment flows from a location in a period cannot exceed that location's available inventory for the product. All such moves incur transshipment costs as specified in the JSON.
 - Demand remains local: each location's demand must be met from its own on-hand inventory and inbound transshipments, if available.
 - Lead times for transshipment are effectively zero in this archetype, so shipments dispatched in a period are available at the destination within the same period.
-- The objective is to minimize total cost including holding, waste, lost sales, and transshipment costs.
+- The objective is to minimize total cost including purchasing, holding, waste, lost sales, and transshipment costs.
 
 [DATA SCHEMA]
 {

@@ -35,7 +35,7 @@ Structure cues:
 - In the JSON, production capacities are set to zero only during a mid-horizon block of periods that coincide with the demand peak. No new production can occur in those periods.
 - Inventory at each location remains non-negative and is updated from period to period based on earlier production, sales, and waste.
 - Substitution behavior, absence of transshipment, zero lead times, and generous labor capacity all remain in effect.
-- The objective is to minimize total cost while planning around the temporary but strategically placed supply failure.
+- The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while planning around the temporary but strategically placed supply failure.
 
 [DATA SCHEMA]
 {

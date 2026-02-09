@@ -35,7 +35,7 @@ Structure cues:
 - Storage capacity: sum over products of (cold_usage[p] * total_inventory[p,l,t]) <= cold_capacity[l]. These limits must be respected.
 - In this archetype, the substitution graph in the JSON is empty (sub_edges = []). The model must not allow demand for one product to be satisfied by any other product; each product's demand can only be met by its own on-hand inventory at that location.
 - There is no transshipment of inventory between locations, lead times are effectively zero, and labor capacity is large relative to demand.
-- The objective is to minimize total cost including holding, waste, and lost sales without any cross-product substitution logic.
+- The objective is to minimize total cost including purchasing, holding, waste, and lost sales without any cross-product substitution logic.
 
 [DATA SCHEMA]
 {

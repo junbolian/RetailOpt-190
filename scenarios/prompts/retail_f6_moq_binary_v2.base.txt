@@ -36,4 +36,4 @@ Structure cues:
 - This all-or-nothing pattern must be enforced consistently across products, locations, and periods so that the model does not exploit fractional orders below the global minimum.
 - Inventory balance follows the standard pattern with zero lead time: on-hand stock in a period comes from previous stock and current orders, minus sales and waste, and cannot become negative.
 - There is no transshipment; substitution behavior follows the JSON graph, and labor capacity is generous.
-- The objective is to minimize total cost including holding, waste, lost sales, and the implicit cost of being forced to buy in minimum lots.
+- The objective is to minimize total cost including purchasing, holding, waste, lost sales, and the implicit cost of being forced to buy in minimum lots.

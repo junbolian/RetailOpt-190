@@ -36,4 +36,4 @@ Structure cues:
 - This pack-size rule introduces integrality into order quantities and must be enforced consistently for all products and periods using the same pack size.
 - Inventory balance with zero lead time is standard: on-hand stock comes from previous stock and ordered units, minus sales and waste, and remains non-negative.
 - There is no transshipment, lead times are zero, and substitution behavior follows the JSON graph.
-- The objective is to minimize total cost subject to the pack-size ordering restriction.
+- The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) subject to the pack-size ordering restriction.

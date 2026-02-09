@@ -70,7 +70,7 @@ retail_f1_base:
       p_to's total sales include serving both its own demand and p_from's demand.
     - There is no transshipment of inventory between locations; each location can only serve its own local demand from its own inventory.
     - Labor capacity is set high enough that it does not bind in this archetype, but if labor constraints are included they must be consistent with the JSON parameters.
-    - The objective is to minimize total cost over the horizon, including inventory holding costs, waste costs, and lost sales penalties. No fixed ordering costs, minimum order quantities, lead times, reverse flows, or global budgets are active here.
+    - The objective is to minimize total cost over the horizon, including purchasing costs, inventory holding costs, waste costs, and lost sales penalties. No fixed ordering costs, minimum order quantities, lead times, reverse flows, or global budgets are active here.
 
 retail_f1_high_waste:
   family_id: F1
@@ -107,7 +107,7 @@ retail_f1_high_waste:
     - Storage capacity: sum over products of (cold_usage[p] * total_inventory[p,l,t]) <= cold_capacity[l]. These limits must be respected.
     - The substitution pattern (Basic's demand served by Premium), absence of transshipment, zero lead times, and effectively non-binding labor capacities are the same as in the baseline scenario.
     - The only intended structural change is in the cost weights: waste costs in the JSON are much larger, so discarding inventory is heavily discouraged, but the constraint system itself is not altered.
-    - The objective continues to minimize the sum of holding costs, waste costs, and lost sales penalties over all products, locations, and periods.
+    - The objective continues to minimize the sum of purchasing costs, holding costs, waste costs, and lost sales penalties over all products, locations, and periods.
 
 retail_f1_jit_logic:
   family_id: F1
@@ -144,7 +144,7 @@ retail_f1_jit_logic:
     - Storage capacity: sum over products of (cold_usage[p] * total_inventory[p,l,t]) <= cold_capacity[l]. These limits must be respected.
     - Substitution behavior (Basic's demand served by Premium), absence of transshipment, and zero lead times all match the baseline archetype.
     - Holding cost coefficients in the JSON are scaled up substantially compared with retail_f1_base, making on-hand inventory much more expensive relative to lost sales. The underlying constraint structure is unchanged.
-    - The objective is to minimize total cost including holding, waste, and lost sales, with the higher holding cost forcing a just-in-time style of operation.
+    - The objective is to minimize total cost including purchasing, holding, waste, and lost sales, with the higher holding cost forcing a just-in-time style of operation.
 
 retail_f1_52_weeks:
   family_id: F1
@@ -192,7 +192,7 @@ retail_f1_52_weeks:
 
     - No transshipment and zero lead times in this scenario.
     - Labor capacity remains high enough that it does not materially bind, though it can be represented consistently with the JSON.
-    - The objective is to minimize total cost over the entire year, aggregating holding, waste, and lost sales costs across all weeks.
+    - The objective is to minimize total cost over the entire year, aggregating purchasing, holding, waste, and lost sales costs across all weeks.
 
 retail_f2_no_substitution:
   family_id: F2
@@ -229,7 +229,7 @@ retail_f2_no_substitution:
     - Storage capacity: sum over products of (cold_usage[p] * total_inventory[p,l,t]) <= cold_capacity[l]. These limits must be respected.
     - In this archetype, the substitution graph in the JSON is empty (sub_edges = []). The model must not allow demand for one product to be satisfied by any other product; each product's demand can only be met by its own on-hand inventory at that location.
     - There is no transshipment of inventory between locations, lead times are effectively zero, and labor capacity is large relative to demand.
-    - The objective is to minimize total cost including holding, waste, and lost sales without any cross-product substitution logic.
+    - The objective is to minimize total cost including purchasing, holding, waste, and lost sales without any cross-product substitution logic.
 
 retail_f2_circular_sub:
   family_id: F2
@@ -267,7 +267,7 @@ retail_f2_circular_sub:
     - The substitution graph in the JSON defines a directed ring among the products. Each edge [A, B] means A's demand can be served by B's inventory. When demand for product A cannot be fully served from A's own stock, the model may serve part of that demand using B's inventory if edge [A, B] exists.
     - Any remaining unmet demand after using all allowed substitutions becomes lost sales with a penalty cost. Customers are not backordered.
     - Zero lead times remain in effect, and there is no transshipment between locations.
-    - The objective is to minimize total cost including holding, waste, and lost sales while respecting the substitution pattern encoded in the JSON.
+    - The objective is to minimize total cost including purchasing, holding, waste, and lost sales while respecting the substitution pattern encoded in the JSON.
 
 retail_f2_cannibalization:
   family_id: F2
@@ -304,7 +304,7 @@ retail_f2_cannibalization:
     - The JSON increases demand for the basic product and reduces its lost sales penalty while keeping higher margins on other items.
     - Tight shared storage capacity means that choosing to stock more of the basic product can crowd out premium and short-life items in the warehouse, purely through the capacity and cost parameters.
     - Inventory remains non-negative, lost sales capture unsatisfied demand after substitution, and there is still no transshipment or backordering.
-    - The objective is to minimize total cost, and the cannibalization effect is driven by the interplay of demand, margin, lost sales penalties, and capacity parameters rather than by any change to the model's basic structure.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales), and the cannibalization effect is driven by the interplay of demand, margin, lost sales penalties, and capacity parameters rather than by any change to the model's basic structure.
 
 retail_f2_ultra_fresh:
   family_id: F2
@@ -319,7 +319,7 @@ retail_f2_ultra_fresh:
     - When units expire they leave usable inventory and are counted as waste, incurring waste costs. Only non-expired stock can be used to satisfy original and substituted demand.
     - Inventory levels must remain non-negative; any demand that cannot be met from non-expired inventory and allowed substitution becomes lost sales.
     - Storage capacity, production capacity, the absence of transshipment, zero lead times, and generous labor capacity remain in force.
-    - The objective is to minimize total cost including short-horizon holding, waste from expiry, and lost sales.
+    - The objective is to minimize total cost including purchasing, short-horizon holding, waste from expiry, and lost sales.
 
 retail_f2_price_band_tight:
   family_id: F2
@@ -357,7 +357,7 @@ retail_f2_price_band_tight:
     - Lost sales penalties and purchasing or production costs in the JSON make premium more valuable to protect and basic cheaper but more elastic. This asymmetry is expressed through cost parameters, not through any special-case constraints.
     - Inventory remains non-negative; any demand that cannot be satisfied even after allowing the basic-to-premium substitution is recorded as lost sales.
     - There is no transshipment, lead times are effectively zero, and labor capacity is non-binding.
-    - The objective is to minimize total cost including holding, waste, and lost sales while respecting the one-way substitution rule and storage capacity limits.
+    - The objective is to minimize total cost including purchasing, holding, waste, and lost sales while respecting the one-way substitution rule and storage capacity limits.
 
 retail_f2_promo_budget:
   family_id: F2
@@ -395,7 +395,7 @@ retail_f2_promo_budget:
     - The JSON also provides a per-period budget for inventory-related spending. For each period, the total purchasing spend (order quantity times purchasing cost) plus any fixed ordering costs if enabled must not exceed this budget.
     - Inventory remains non-negative, and any demand that cannot be satisfied within the budget and capacity limits becomes lost sales.
     - Substitution behavior, zero lead times, and generous labor capacity remain active as in other Family 2 archetypes.
-    - The objective is to minimize total cost subject to the per-period budget, making the trade-off between promotion support and resource limits explicit.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) subject to the per-period budget, making the trade-off between promotion support and resource limits explicit.
 
 retail_f3_storage_bottleneck:
   family_id: F3
@@ -432,7 +432,7 @@ retail_f3_storage_bottleneck:
     - Inventory levels at each location are kept non-negative and evolve from carried-over stock and new production, minus sales and waste.
     - Substitution edges, if any, are taken from the JSON and follow the standard semantics: edge [A, B] means A's demand can be served by B.
     - Production capacities, zero lead times, and generous labor capacity remain as in the base scenario.
-    - The objective is to minimize total cost while respecting the tight storage constraint.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while respecting the tight storage constraint.
 
 retail_f3_volumetric_constraint:
   family_id: F3
@@ -468,7 +468,7 @@ retail_f3_volumetric_constraint:
     - Storage capacity: sum over products of (cold_usage[p] * total_inventory[p,l,t]) <= cold_capacity[l]. Product-specific storage usage parameters in the JSON are much larger for the premium product than for other SKUs.
     - Inventory cannot be negative and is updated based on previous stock, local production, sales, and waste.
     - There is no transshipment, lead times are zero, and substitution behavior follows the JSON graph with standard semantics.
-    - The objective is to minimize total cost under capacity constraints that make the volumetrically heavy premium product particularly expensive in terms of space.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) under capacity constraints that make the volumetrically heavy premium product particularly expensive in terms of space.
 
 retail_f3_supply_bottleneck:
   family_id: F3
@@ -505,7 +505,7 @@ retail_f3_supply_bottleneck:
     - Per-product production capacities are significantly reduced. These caps must be enforced and become the main source of unmet demand.
     - Inventory at each location and period stays non-negative and changes according to local production, sales, and waste.
     - There is no transshipment, lead times are zero, and substitution behavior is determined by the substitution graph with standard semantics.
-    - The objective is to minimize total cost, with lost sales penalties playing a central role because of tight production capacity.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales), with lost sales penalties playing a central role because of tight production capacity.
 
 retail_f3_unbalanced_network:
   family_id: F3
@@ -541,7 +541,7 @@ retail_f3_unbalanced_network:
     - Storage capacity: sum over products of (cold_usage[p] * total_inventory[p,l,t]) <= cold_capacity[l]. The JSON concentrates storage capacity at one hub location and gives very small capacities to the satellites.
     - Inventory for each product and location evolves from previous stock and local production, minus sales and waste, without ever going below zero.
     - Production capacities, zero lead times, and substitution behavior are as in the base scenario.
-    - The objective is to minimize total cost while respecting the highly asymmetric storage limits across locations.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while respecting the highly asymmetric storage limits across locations.
 
 retail_f4_early_stockout:
   family_id: F4
@@ -579,7 +579,7 @@ retail_f4_early_stockout:
     - Inventory remains non-negative and changes from period to period based on previous stock, any allowed production (zero during the disruption), sales, and waste.
     - Substitution behavior and zero lead times remain unchanged from the baseline.
     - Labor capacity is generous and does not bind.
-    - The objective is to minimize total cost while capturing the trade-off between carrying inventory into the supply failure (and paying holding or waste costs) and accepting lost sales during the disruption.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while capturing the trade-off between carrying inventory into the supply failure and accepting lost sales during the disruption.
 
 retail_f4_peak_failure:
   family_id: F4
@@ -616,7 +616,7 @@ retail_f4_peak_failure:
     - In the JSON, production capacities are set to zero only during a mid-horizon block of periods that coincide with the demand peak. No new production can occur in those periods.
     - Inventory at each location remains non-negative and is updated from period to period based on earlier production, sales, and waste.
     - Substitution behavior, absence of transshipment, zero lead times, and generous labor capacity all remain in effect.
-    - The objective is to minimize total cost while planning around the temporary but strategically placed supply failure.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while planning around the temporary but strategically placed supply failure.
 
 retail_f4_demand_surge:
   family_id: F4
@@ -653,7 +653,7 @@ retail_f4_demand_surge:
     - In the JSON, one mid-horizon period has demand for each product scaled up by a large factor, representing the surge. This period is treated as having much higher exogenous demand.
     - Inventory stays non-negative and is updated using previous stock, current production, sales, and waste.
     - Substitution behavior is unchanged, there is no transshipment, and lead times remain effectively zero.
-    - The objective is to minimize total cost, with the demand spike increasing the importance of planning ahead for that particular period.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales), with the demand spike increasing the importance of planning ahead for that particular period.
 
 retail_f4_quality_hold:
   family_id: F4
@@ -691,7 +691,7 @@ retail_f4_quality_hold:
     - Inventory for each product and location evolves from period to period based on previous stock, production (which is zero for the basic product during the hold), sales, and waste, and must remain non-negative.
     - Any unmet demand for the basic product after considering allowed substitution becomes lost sales.
     - Substitution behavior, zero lead times, and generous labor capacity remain as usual.
-    - The objective is to minimize total cost while capturing the effect of the asymmetric quality hold on the basic product.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while capturing the effect of the asymmetric quality hold on the basic product.
 
 retail_f4_robust_variance:
   family_id: F4
@@ -728,7 +728,7 @@ retail_f4_robust_variance:
     - In the JSON, demand curves oscillate across periods, creating repeated high-demand and low-demand phases; lost sales penalties are increased for all products so that stockouts are very costly.
     - Inventory at each product, location, and period remains non-negative and evolves from previous stock and current production, minus sales and waste.
     - Substitution behavior, zero lead times, and generous labor capacity remain in effect as in other Family 4 archetypes.
-    - The objective is to minimize total cost including holding, waste, and large lost sales penalties, encouraging robust safety-stock style planning against the demand variance.
+    - The objective is to minimize total cost including purchasing, holding, waste, and lost sales penalties, encouraging robust safety-stock style planning against the demand variance.
 
 retail_f4_supply_risk:
   family_id: F4
@@ -766,7 +766,7 @@ retail_f4_supply_risk:
     - Waste cost parameters are increased for all products so that discarding inventory is more expensive, making overbuilding before the risk window more costly.
     - Inventory at each product, location, and period remains non-negative and is updated from previous stock, allowed production, sales, and waste.
     - Substitution behavior, zero lead times, and generous labor capacity are unchanged from the baseline.
-    - The objective is to minimize total cost while trading off early inventory builds against the increased waste cost and mid-season supply risk.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while trading off early inventory builds against the increased waste cost and mid-season supply risk.
 
 retail_f5_impossible_demand:
   family_id: F5
@@ -804,7 +804,7 @@ retail_f5_impossible_demand:
     - Inventory at each location and period is kept non-negative and reflects previous stock, local production, sales, and waste.
     - Production capacity constraints must be applied as given.
     - There is no transshipment, lead times are zero, and substitution behavior follows the substitution graph.
-    - The objective is to minimize total cost, balancing holding, waste, and large lost sales penalties, effectively performing a form of model repair by accepting partial service.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales), effectively performing a form of model repair by accepting partial service.
 
 retail_f5_strict_service_trap:
   family_id: F5
@@ -841,7 +841,7 @@ retail_f5_strict_service_trap:
     - Inventory at each product, location, and period remains non-negative and is updated from previous stock, production, sales, and waste.
     - Unmet demand is treated as lost sales with penalties; backorders are not allowed, and there is no hard requirement that all demand be served.
     - There is no transshipment and lead times are zero. Substitution behavior remains as defined.
-    - The objective is to minimize total cost while recognizing that limited storage capacity makes full service impossible in some periods.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while recognizing that limited storage capacity makes full service impossible in some periods.
 
 retail_f5_storage_overflow:
   family_id: F5
@@ -878,7 +878,7 @@ retail_f5_storage_overflow:
     - Inventory must stay non-negative and is adjusted through production, sales, and waste. In most periods, on-hand inventory must be kept very low to satisfy capacity.
     - Unmet demand becomes lost sales, and discarding inventory becomes an important decision despite its cost.
     - There is no transshipment, lead times are zero, and substitution behavior is unchanged.
-    - The objective is to minimize total cost, trading off waste and lost sales under extremely strict storage capacity.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales), trading off waste and lost sales under extremely strict storage capacity.
 
 retail_f5_ultimate_stress:
   family_id: F5
@@ -916,7 +916,7 @@ retail_f5_ultimate_stress:
     - The substitution graph is empty (sub_edges = []), so each product's demand can only be served by its own inventory at the location.
     - Inventory at each product, location, and period remains non-negative and reflects previous stock, allowed production, sales, and waste. Unmet demand is explicitly treated as lost sales.
     - There is no transshipment and lead times are zero. Labor capacity remains generous.
-    - The objective is to minimize total cost while handling simultaneous capacity, supply, and assortment stress without violating feasibility.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while handling simultaneous capacity, supply, and assortment stress without violating feasibility.
 
 retail_f6_lead_time:
   family_id: F6
@@ -954,7 +954,7 @@ retail_f6_lead_time:
     - Inventory must distinguish between on-hand units and units that are still in transit. Only on-hand units can be used to satisfy demand in a given period; in-transit units become on-hand when their lead time completes.
     - For each product and location, on-hand stock in a period is determined by previous on-hand stock plus arrivals of past orders whose lead time has completed, minus sales and waste. Stock levels must remain non-negative.
     - Substitution behavior, absence of transshipment, and generous labor capacity remain consistent with other families.
-    - The objective is to minimize total cost while explicitly capturing the effect of deterministic lead times on inventory decisions.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while explicitly capturing the effect of deterministic lead times on inventory decisions.
 
 retail_f6_moq_binary:
   family_id: F6
@@ -992,7 +992,7 @@ retail_f6_moq_binary:
     - This all-or-nothing pattern must be enforced consistently across products, locations, and periods so that the model does not exploit fractional orders below the global minimum.
     - Inventory balance follows the standard pattern with zero lead time: on-hand stock in a period comes from previous stock and current orders, minus sales and waste, and cannot become negative.
     - There is no transshipment; substitution behavior follows the JSON graph, and labor capacity is generous.
-    - The objective is to minimize total cost including holding, waste, lost sales, and the implicit cost of being forced to buy in minimum lots.
+    - The objective is to minimize total cost including purchasing, holding, waste, lost sales, and the implicit cost of being forced to buy in minimum lots.
 
 retail_f6_fixed_order_cost:
   family_id: F6
@@ -1030,7 +1030,7 @@ retail_f6_fixed_order_cost:
     - The model must ensure that the fixed cost is applied if and only if the total order quantity for a product at a location in a period is positive; it should not be possible to evade the fixed cost with arbitrarily small orders.
     - Inventory balance under zero lead time is standard: on-hand stock is updated from previous stock and current orders, minus sales and waste, and cannot drop below zero.
     - There is no transshipment, lead times are zero, and substitution behavior is unchanged.
-    - The objective is to minimize total cost including fixed ordering costs, holding, waste, and lost sales.
+    - The objective is to minimize total cost including purchasing, fixed ordering, holding, waste, and lost sales costs.
 
 retail_f6_pack_size_integer:
   family_id: F6
@@ -1068,7 +1068,7 @@ retail_f6_pack_size_integer:
     - This pack-size rule introduces integrality into order quantities and must be enforced consistently for all products and periods using the same pack size.
     - Inventory balance with zero lead time is standard: on-hand stock comes from previous stock and ordered units, minus sales and waste, and remains non-negative.
     - There is no transshipment, lead times are zero, and substitution behavior follows the JSON graph.
-    - The objective is to minimize total cost subject to the pack-size ordering restriction.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) subject to the pack-size ordering restriction.
 
 retail_f7_transshipment:
   family_id: F7
@@ -1106,7 +1106,7 @@ retail_f7_transshipment:
     - Transshipment flows from a location in a period cannot exceed that location's available inventory for the product. All such moves incur transshipment costs as specified in the JSON.
     - Demand remains local: each location's demand must be met from its own on-hand inventory and inbound transshipments, if available.
     - Lead times for transshipment are effectively zero in this archetype, so shipments dispatched in a period are available at the destination within the same period.
-    - The objective is to minimize total cost including holding, waste, lost sales, and transshipment costs.
+    - The objective is to minimize total cost including purchasing, holding, waste, lost sales, and transshipment costs.
 
 retail_f7_hub_and_spoke:
   family_id: F7
@@ -1143,7 +1143,7 @@ retail_f7_hub_and_spoke:
     - For each product, location, and period, inventory evolves based on local production (if any), inbound shipments, outbound shipments, sales (at spokes), and waste, and must remain non-negative.
     - Transshipment flows from the hub are limited by the hub's available inventory and incur transshipment costs. Spokes largely rely on inbound shipments from the hub to meet local demand.
     - Lead times for transshipment are effectively zero, and substitution behavior remains as encoded.
-    - The objective is to minimize total cost while exploiting the centralized hub structure.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, lost sales, and transshipment costs) while exploiting the centralized hub structure.
 
 retail_f7_budget_limit:
   family_id: F7
@@ -1181,7 +1181,7 @@ retail_f7_budget_limit:
     - Inventory balance for each product, location, and period follows the standard pattern with production or inbound shipments, outbound shipments, sales, and waste, and inventory must remain non-negative.
     - The budget constraint must be encoded so that spending above the budget is not allowed in any period.
     - The transshipment network and lead times match the base network archetype for this family.
-    - The objective is to minimize total cost while respecting the period-by-period budget caps.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while respecting the period-by-period budget caps.
 
 retail_f7_multi_sourcing:
   family_id: F7
@@ -1218,7 +1218,7 @@ retail_f7_multi_sourcing:
     - The JSON sets different lead times (SKU_Basic=5, SKU_Premium=0, SKU_ShortLife=1) and holding costs (SKU_Basic=0.5, SKU_Premium=10.0). Orders for each product become available only after that product's lead time, and inventory carried over incurs its corresponding holding cost.
     - For each product, location, and period, on-hand stock is determined by previous on-hand stock, arrivals of past orders whose lead time completes in that period, sales, and waste, and must remain non-negative.
     - The scenario mimics slow/cheap (Basic) and fast/expensive (Premium) sourcing channels at the product level through heterogeneous lead times and cost profiles.
-    - The objective is to minimize total cost while correctly handling the different lead times and holding-cost profiles.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while correctly handling the different lead times and holding-cost profiles.
 
 retail_f7_multiechelon_chain:
   family_id: F7
@@ -1256,7 +1256,7 @@ retail_f7_multiechelon_chain:
     - Demand occurs only at store nodes according to demand_share (Store1=30%, Store2=40%, Store3=30%). Upstream nodes (Plant, DCs) do not face direct customer demand.
     - For each product, location, and period, inventory reflects previous stock, production or inbound shipments, outbound shipments, sales at stores, and waste, and must remain non-negative.
     - Lost sales occur only at store nodes when local demand cannot be served from available inventory, even after receiving shipments from upstream.
-    - The objective is to minimize total cost including holding at all echelons, transshipment, waste, and lost sales, subject to the three-echelon topology.
+    - The objective is to minimize total cost including purchasing, holding at all echelons, transshipment, waste, and lost sales, subject to the three-echelon topology.
 
 retail_f7_ring_routing:
   family_id: F7
@@ -1294,7 +1294,7 @@ retail_f7_ring_routing:
     - Demand at each location is met from local inventory and inbound ring shipments; there are no shortcuts across the ring.
     - Inventory that moves further along the route must pass through intermediate locations in sequence.
     - Lead times for ring shipments are effectively zero in this archetype, and substitution behavior is as encoded.
-    - The objective is to minimize total cost while respecting the ring network structure and tighter storage capacities.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, lost sales, and transshipment costs) while respecting the ring network structure and tighter storage capacities.
 
 retail_f8_reverse_logistics:
   family_id: F8
@@ -1331,7 +1331,7 @@ retail_f8_reverse_logistics:
     - The JSON specifies return rates: SKU_Basic=20%, SKU_Premium=10%, SKU_ShortLife=5%. For each product and location, this fraction of units sold in one period re-enters as usable inventory at the same location in the next period.
     - Inventory at each period includes previous stock, current production, and returns from prior sales, minus current-period sales and waste, and must remain non-negative.
     - There is no transshipment in this archetype, and lead times for production are zero.
-    - The objective is to minimize total cost including holding, waste, lost sales, and any indirect effect of handling returns as captured in the cost parameters.
+    - The objective is to minimize total cost including purchasing, holding, waste, lost sales, and any indirect effect of handling returns as captured in the cost parameters.
 
 retail_f8_labor_constraint:
   family_id: F8
@@ -1369,7 +1369,7 @@ retail_f8_labor_constraint:
     - A simple representation is to treat labor usage as proportional to the volume of units handled, such as the sum of units received, picked, or moved for that product and period.
     - Inventory balance follows the usual pattern: previous stock plus arrivals minus sales and waste, with non-negative inventory and lost sales for unmet demand.
     - There is no transshipment in this archetype.
-    - The objective is to minimize total cost while respecting labor capacity constraints, which may bind in busy periods.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while respecting labor capacity constraints, which may bind in busy periods.
 
 retail_f8_ship_from_store:
   family_id: F8
@@ -1407,7 +1407,7 @@ retail_f8_ship_from_store:
     - Stores conceptually serve two demand streams, but the model treats them as a single aggregated demand per product and location.
     - Inventory remains non-negative and is updated from previous stock and production, minus sales and waste.
     - There is no transshipment; lead times are zero, and substitution behavior remains as encoded.
-    - The objective is to minimize total cost while balancing higher labor intensity against increased capacity.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while balancing higher labor intensity against increased capacity.
 
 retail_f8_sustainability:
   family_id: F8
@@ -1444,4 +1444,4 @@ retail_f8_sustainability:
     - The JSON specifies waste_limit_pct=0.02 (2%). Over the horizon, the total waste across all products, locations, and periods must not exceed 2% of total demand: sum(waste) <= 0.02 * sum(demand).
     - Inventory is updated from previous stock and production, minus sales and waste, and remains non-negative.
     - Substitution behavior remains active as defined in the JSON, and there is no transshipment.
-    - The objective is to minimize total cost subject to the global waste cap, making trade-offs between holding more inventory, losing sales, and discarding units explicit.
+    - The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) subject to the global waste cap, making trade-offs between holding more inventory, losing sales, and discarding units explicit.

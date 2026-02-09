@@ -46,4 +46,4 @@ Structure cues:
 
 - No transshipment and zero lead times in this scenario.
 - Labor capacity remains high enough that it does not materially bind, though it can be represented consistently with the JSON.
-- The objective is to minimize total cost over the entire year, aggregating holding, waste, and lost sales costs across all weeks.
+- The objective is to minimize total cost over the entire year, aggregating purchasing, holding, waste, and lost sales costs across all weeks.

@@ -36,7 +36,7 @@ Structure cues:
 - A simple representation is to treat labor usage as proportional to the volume of units handled, such as the sum of units received, picked, or moved for that product and period.
 - Inventory balance follows the usual pattern: previous stock plus arrivals minus sales and waste, with non-negative inventory and lost sales for unmet demand.
 - There is no transshipment in this archetype.
-- The objective is to minimize total cost while respecting labor capacity constraints, which may bind in busy periods.
+- The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while respecting labor capacity constraints, which may bind in busy periods.
 
 [DATA]
 The following JSON contains all instance data. Parse it directly in your code.

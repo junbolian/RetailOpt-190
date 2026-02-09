@@ -36,7 +36,7 @@ Structure cues:
 - The JSON also provides a per-period budget for inventory-related spending. For each period, the total purchasing spend (order quantity times purchasing cost) plus any fixed ordering costs if enabled must not exceed this budget.
 - Inventory remains non-negative, and any demand that cannot be satisfied within the budget and capacity limits becomes lost sales.
 - Substitution behavior, zero lead times, and generous labor capacity remain active as in other Family 2 archetypes.
-- The objective is to minimize total cost subject to the per-period budget, making the trade-off between promotion support and resource limits explicit.
+- The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) subject to the per-period budget, making the trade-off between promotion support and resource limits explicit.
 
 [DATA]
 The following JSON contains all instance data. Parse it directly in your code.

@@ -13,7 +13,7 @@ Structure cues:
 - When units expire they leave usable inventory and are counted as waste, incurring waste costs. Only non-expired stock can be used to satisfy original and substituted demand.
 - Inventory levels must remain non-negative; any demand that cannot be met from non-expired inventory and allowed substitution becomes lost sales.
 - Storage capacity, production capacity, the absence of transshipment, zero lead times, and generous labor capacity remain in force.
-- The objective is to minimize total cost including short-horizon holding, waste from expiry, and lost sales.
+- The objective is to minimize total cost including purchasing, short-horizon holding, waste from expiry, and lost sales.
 
 [DATA SCHEMA]
 {

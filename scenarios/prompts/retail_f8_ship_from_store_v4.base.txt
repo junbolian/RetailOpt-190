@@ -36,4 +36,4 @@ Structure cues:
 - Stores conceptually serve two demand streams, but the model treats them as a single aggregated demand per product and location.
 - Inventory remains non-negative and is updated from previous stock and production, minus sales and waste.
 - There is no transshipment; lead times are zero, and substitution behavior remains as encoded.
-- The objective is to minimize total cost while balancing higher labor intensity against increased capacity.
+- The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while balancing higher labor intensity against increased capacity.

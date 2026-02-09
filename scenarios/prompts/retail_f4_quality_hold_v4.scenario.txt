@@ -36,7 +36,7 @@ Structure cues:
 - Inventory for each product and location evolves from period to period based on previous stock, production (which is zero for the basic product during the hold), sales, and waste, and must remain non-negative.
 - Any unmet demand for the basic product after considering allowed substitution becomes lost sales.
 - Substitution behavior, zero lead times, and generous labor capacity remain as usual.
-- The objective is to minimize total cost while capturing the effect of the asymmetric quality hold on the basic product.
+- The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while capturing the effect of the asymmetric quality hold on the basic product.
 
 [DATA SCHEMA]
 {

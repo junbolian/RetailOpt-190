@@ -36,7 +36,7 @@ Structure cues:
 - The model must ensure that the fixed cost is applied if and only if the total order quantity for a product at a location in a period is positive; it should not be possible to evade the fixed cost with arbitrarily small orders.
 - Inventory balance under zero lead time is standard: on-hand stock is updated from previous stock and current orders, minus sales and waste, and cannot drop below zero.
 - There is no transshipment, lead times are zero, and substitution behavior is unchanged.
-- The objective is to minimize total cost including fixed ordering costs, holding, waste, and lost sales.
+- The objective is to minimize total cost including purchasing, fixed ordering, holding, waste, and lost sales costs.
 
 [DATA SCHEMA]
 {

@@ -1,6 +1,5 @@
 # ==============================================================================
 # FILE: universal_retail_solver.py
-# LOCATION: reloop/solvers/
 #
 # DESCRIPTION:
 #   The Universal Retail Solver (URS).

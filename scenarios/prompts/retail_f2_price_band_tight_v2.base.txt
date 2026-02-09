@@ -36,4 +36,4 @@ Structure cues:
 - Lost sales penalties and purchasing or production costs in the JSON make premium more valuable to protect and basic cheaper but more elastic. This asymmetry is expressed through cost parameters, not through any special-case constraints.
 - Inventory remains non-negative; any demand that cannot be satisfied even after allowing the basic-to-premium substitution is recorded as lost sales.
 - There is no transshipment, lead times are effectively zero, and labor capacity is non-binding.
-- The objective is to minimize total cost including holding, waste, and lost sales while respecting the one-way substitution rule and storage capacity limits.
+- The objective is to minimize total cost including purchasing, holding, waste, and lost sales while respecting the one-way substitution rule and storage capacity limits.

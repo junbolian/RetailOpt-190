@@ -35,7 +35,7 @@ Structure cues:
 - Per-product production capacities are significantly reduced. These caps must be enforced and become the main source of unmet demand.
 - Inventory at each location and period stays non-negative and changes according to local production, sales, and waste.
 - There is no transshipment, lead times are zero, and substitution behavior is determined by the substitution graph with standard semantics.
-- The objective is to minimize total cost, with lost sales penalties playing a central role because of tight production capacity.
+- The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales), with lost sales penalties playing a central role because of tight production capacity.
 
 [DATA]
 The following JSON contains all instance data. Parse it directly in your code.

@@ -36,7 +36,7 @@ Structure cues:
 - The substitution graph in the JSON defines a directed ring among the products. Each edge [A, B] means A's demand can be served by B's inventory. When demand for product A cannot be fully served from A's own stock, the model may serve part of that demand using B's inventory if edge [A, B] exists.
 - Any remaining unmet demand after using all allowed substitutions becomes lost sales with a penalty cost. Customers are not backordered.
 - Zero lead times remain in effect, and there is no transshipment between locations.
-- The objective is to minimize total cost including holding, waste, and lost sales while respecting the substitution pattern encoded in the JSON.
+- The objective is to minimize total cost including purchasing, holding, waste, and lost sales while respecting the substitution pattern encoded in the JSON.
 
 [DATA]
 The following JSON contains all instance data. Parse it directly in your code.

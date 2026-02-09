@@ -35,4 +35,4 @@ Structure cues:
 - The JSON specifies waste_limit_pct=0.02 (2%). Over the horizon, the total waste across all products, locations, and periods must not exceed 2% of total demand: sum(waste) <= 0.02 * sum(demand).
 - Inventory is updated from previous stock and production, minus sales and waste, and remains non-negative.
 - Substitution behavior remains active as defined in the JSON, and there is no transshipment.
-- The objective is to minimize total cost subject to the global waste cap, making trade-offs between holding more inventory, losing sales, and discarding units explicit.
+- The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) subject to the global waste cap, making trade-offs between holding more inventory, losing sales, and discarding units explicit.

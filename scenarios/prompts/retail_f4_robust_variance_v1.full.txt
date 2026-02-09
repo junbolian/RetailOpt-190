@@ -35,7 +35,7 @@ Structure cues:
 - In the JSON, demand curves oscillate across periods, creating repeated high-demand and low-demand phases; lost sales penalties are increased for all products so that stockouts are very costly.
 - Inventory at each product, location, and period remains non-negative and evolves from previous stock and current production, minus sales and waste.
 - Substitution behavior, zero lead times, and generous labor capacity remain in effect as in other Family 4 archetypes.
-- The objective is to minimize total cost including holding, waste, and large lost sales penalties, encouraging robust safety-stock style planning against the demand variance.
+- The objective is to minimize total cost including purchasing, holding, waste, and lost sales penalties, encouraging robust safety-stock style planning against the demand variance.
 
 [DATA]
 The following JSON contains all instance data. Parse it directly in your code.

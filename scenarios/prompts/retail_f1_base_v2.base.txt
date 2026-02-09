@@ -47,4 +47,4 @@ Structure cues:
   p_to's total sales include serving both its own demand and p_from's demand.
 - There is no transshipment of inventory between locations; each location can only serve its own local demand from its own inventory.
 - Labor capacity is set high enough that it does not bind in this archetype, but if labor constraints are included they must be consistent with the JSON parameters.
-- The objective is to minimize total cost over the horizon, including inventory holding costs, waste costs, and lost sales penalties. No fixed ordering costs, minimum order quantities, lead times, reverse flows, or global budgets are active here.
+- The objective is to minimize total cost over the horizon, including purchasing costs, inventory holding costs, waste costs, and lost sales penalties. No fixed ordering costs, minimum order quantities, lead times, reverse flows, or global budgets are active here.

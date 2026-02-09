@@ -36,7 +36,7 @@ Structure cues:
 - Demand at each location is met from local inventory and inbound ring shipments; there are no shortcuts across the ring.
 - Inventory that moves further along the route must pass through intermediate locations in sequence.
 - Lead times for ring shipments are effectively zero in this archetype, and substitution behavior is as encoded.
-- The objective is to minimize total cost while respecting the ring network structure and tighter storage capacities.
+- The objective is to minimize total cost (aggregating purchasing, holding, waste, lost sales, and transshipment costs) while respecting the ring network structure and tighter storage capacities.
 
 [DATA]
 The following JSON contains all instance data. Parse it directly in your code.

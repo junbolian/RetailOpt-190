@@ -36,4 +36,4 @@ Structure cues:
 - Inventory must distinguish between on-hand units and units that are still in transit. Only on-hand units can be used to satisfy demand in a given period; in-transit units become on-hand when their lead time completes.
 - For each product and location, on-hand stock in a period is determined by previous on-hand stock plus arrivals of past orders whose lead time has completed, minus sales and waste. Stock levels must remain non-negative.
 - Substitution behavior, absence of transshipment, and generous labor capacity remain consistent with other families.
-- The objective is to minimize total cost while explicitly capturing the effect of deterministic lead times on inventory decisions.
+- The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while explicitly capturing the effect of deterministic lead times on inventory decisions.

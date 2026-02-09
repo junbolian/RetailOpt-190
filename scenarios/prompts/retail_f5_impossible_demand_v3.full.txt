@@ -36,7 +36,7 @@ Structure cues:
 - Inventory at each location and period is kept non-negative and reflects previous stock, local production, sales, and waste.
 - Production capacity constraints must be applied as given.
 - There is no transshipment, lead times are zero, and substitution behavior follows the substitution graph.
-- The objective is to minimize total cost, balancing holding, waste, and large lost sales penalties, effectively performing a form of model repair by accepting partial service.
+- The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales), effectively performing a form of model repair by accepting partial service.
 
 [DATA]
 The following JSON contains all instance data. Parse it directly in your code.

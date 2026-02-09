@@ -35,4 +35,4 @@ Structure cues:
 - For each product, location, and period, inventory evolves based on local production (if any), inbound shipments, outbound shipments, sales (at spokes), and waste, and must remain non-negative.
 - Transshipment flows from the hub are limited by the hub's available inventory and incur transshipment costs. Spokes largely rely on inbound shipments from the hub to meet local demand.
 - Lead times for transshipment are effectively zero, and substitution behavior remains as encoded.
-- The objective is to minimize total cost while exploiting the centralized hub structure.
+- The objective is to minimize total cost (aggregating purchasing, holding, waste, lost sales, and transshipment costs) while exploiting the centralized hub structure.

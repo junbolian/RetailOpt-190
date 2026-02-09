@@ -36,7 +36,7 @@ Structure cues:
 - Demand occurs only at store nodes according to demand_share (Store1=30%, Store2=40%, Store3=30%). Upstream nodes (Plant, DCs) do not face direct customer demand.
 - For each product, location, and period, inventory reflects previous stock, production or inbound shipments, outbound shipments, sales at stores, and waste, and must remain non-negative.
 - Lost sales occur only at store nodes when local demand cannot be served from available inventory, even after receiving shipments from upstream.
-- The objective is to minimize total cost including holding at all echelons, transshipment, waste, and lost sales, subject to the three-echelon topology.
+- The objective is to minimize total cost including purchasing, holding at all echelons, transshipment, waste, and lost sales, subject to the three-echelon topology.
 
 [DATA]
 The following JSON contains all instance data. Parse it directly in your code.

@@ -35,7 +35,7 @@ Structure cues:
 - Inventory must stay non-negative and is adjusted through production, sales, and waste. In most periods, on-hand inventory must be kept very low to satisfy capacity.
 - Unmet demand becomes lost sales, and discarding inventory becomes an important decision despite its cost.
 - There is no transshipment, lead times are zero, and substitution behavior is unchanged.
-- The objective is to minimize total cost, trading off waste and lost sales under extremely strict storage capacity.
+- The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales), trading off waste and lost sales under extremely strict storage capacity.
 
 [DATA]
 The following JSON contains all instance data. Parse it directly in your code.

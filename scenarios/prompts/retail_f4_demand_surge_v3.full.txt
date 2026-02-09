@@ -35,7 +35,7 @@ Structure cues:
 - In the JSON, one mid-horizon period has demand for each product scaled up by a large factor, representing the surge. This period is treated as having much higher exogenous demand.
 - Inventory stays non-negative and is updated using previous stock, current production, sales, and waste.
 - Substitution behavior is unchanged, there is no transshipment, and lead times remain effectively zero.
-- The objective is to minimize total cost, with the demand spike increasing the importance of planning ahead for that particular period.
+- The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales), with the demand spike increasing the importance of planning ahead for that particular period.
 
 [DATA]
 The following JSON contains all instance data. Parse it directly in your code.

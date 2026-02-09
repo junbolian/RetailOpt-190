@@ -35,7 +35,7 @@ Structure cues:
 - Inventory levels at each location are kept non-negative and evolve from carried-over stock and new production, minus sales and waste.
 - Substitution edges, if any, are taken from the JSON and follow the standard semantics: edge [A, B] means A's demand can be served by B.
 - Production capacities, zero lead times, and generous labor capacity remain as in the base scenario.
-- The objective is to minimize total cost while respecting the tight storage constraint.
+- The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while respecting the tight storage constraint.
 
 [DATA SCHEMA]
 {

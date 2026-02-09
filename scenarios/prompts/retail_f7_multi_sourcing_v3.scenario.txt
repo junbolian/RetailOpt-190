@@ -35,7 +35,7 @@ Structure cues:
 - The JSON sets different lead times (SKU_Basic=5, SKU_Premium=0, SKU_ShortLife=1) and holding costs (SKU_Basic=0.5, SKU_Premium=10.0). Orders for each product become available only after that product's lead time, and inventory carried over incurs its corresponding holding cost.
 - For each product, location, and period, on-hand stock is determined by previous on-hand stock, arrivals of past orders whose lead time completes in that period, sales, and waste, and must remain non-negative.
 - The scenario mimics slow/cheap (Basic) and fast/expensive (Premium) sourcing channels at the product level through heterogeneous lead times and cost profiles.
-- The objective is to minimize total cost while correctly handling the different lead times and holding-cost profiles.
+- The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while correctly handling the different lead times and holding-cost profiles.
 
 [DATA SCHEMA]
 {

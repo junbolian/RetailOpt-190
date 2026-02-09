@@ -34,4 +34,4 @@ Structure cues:
 - Storage capacity: sum over products of (cold_usage[p] * total_inventory[p,l,t]) <= cold_capacity[l]. The JSON concentrates storage capacity at one hub location and gives very small capacities to the satellites.
 - Inventory for each product and location evolves from previous stock and local production, minus sales and waste, without ever going below zero.
 - Production capacities, zero lead times, and substitution behavior are as in the base scenario.
-- The objective is to minimize total cost while respecting the highly asymmetric storage limits across locations.
+- The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while respecting the highly asymmetric storage limits across locations.

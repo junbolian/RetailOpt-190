@@ -36,7 +36,7 @@ Structure cues:
 - Waste cost parameters are increased for all products so that discarding inventory is more expensive, making overbuilding before the risk window more costly.
 - Inventory at each product, location, and period remains non-negative and is updated from previous stock, allowed production, sales, and waste.
 - Substitution behavior, zero lead times, and generous labor capacity are unchanged from the baseline.
-- The objective is to minimize total cost while trading off early inventory builds against the increased waste cost and mid-season supply risk.
+- The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while trading off early inventory builds against the increased waste cost and mid-season supply risk.
 
 [DATA]
 The following JSON contains all instance data. Parse it directly in your code.

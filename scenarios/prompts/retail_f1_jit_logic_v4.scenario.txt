@@ -35,7 +35,7 @@ Structure cues:
 - Storage capacity: sum over products of (cold_usage[p] * total_inventory[p,l,t]) <= cold_capacity[l]. These limits must be respected.
 - Substitution behavior (Basic's demand served by Premium), absence of transshipment, and zero lead times all match the baseline archetype.
 - Holding cost coefficients in the JSON are scaled up substantially compared with retail_f1_base, making on-hand inventory much more expensive relative to lost sales. The underlying constraint structure is unchanged.
-- The objective is to minimize total cost including holding, waste, and lost sales, with the higher holding cost forcing a just-in-time style of operation.
+- The objective is to minimize total cost including purchasing, holding, waste, and lost sales, with the higher holding cost forcing a just-in-time style of operation.
 
 [DATA SCHEMA]
 {

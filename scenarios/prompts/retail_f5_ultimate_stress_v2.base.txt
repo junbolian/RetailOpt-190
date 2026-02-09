@@ -36,4 +36,4 @@ Structure cues:
 - The substitution graph is empty (sub_edges = []), so each product's demand can only be served by its own inventory at the location.
 - Inventory at each product, location, and period remains non-negative and reflects previous stock, allowed production, sales, and waste. Unmet demand is explicitly treated as lost sales.
 - There is no transshipment and lead times are zero. Labor capacity remains generous.
-- The objective is to minimize total cost while handling simultaneous capacity, supply, and assortment stress without violating feasibility.
+- The objective is to minimize total cost (aggregating purchasing, holding, waste, and lost sales) while handling simultaneous capacity, supply, and assortment stress without violating feasibility.
