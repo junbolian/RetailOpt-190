@@ -8,7 +8,7 @@ Business narrative:
 Locations are connected in a directed ring, mimicking a truck route that visits each location in a fixed cycle. Inventory can only move along the ring edges, and storage capacities are tightened so that the chosen routing structure affects feasibility and cost. Demand is local and exogenous at each node, and unmet demand is lost and penalized.
 
 Structure cues:
-- The transshipment network in the JSON forms a directed cycle: DC1→DC2→DC3→DC4→DC5→DC1. Inventory can be shipped only along these ring edges.
+- The transshipment network in the JSON forms a directed cycle: DC1->DC2->DC3->DC4->DC5->DC1. Inventory can be shipped only along these ring edges.
 - Shelf life: Each product has a shelf life in periods. Inventory must be tracked by REMAINING LIFE.
 
   VARIABLE DEFINITION: I[p,l,t,r] = inventory at START of period t with r periods remaining.
