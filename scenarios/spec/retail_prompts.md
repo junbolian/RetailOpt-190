@@ -14,18 +14,15 @@ RetailOpt-190 uses **three prompt formats** for different evaluation scenarios:
 | `{scenario_id}.full.txt` | Scenario + full JSON data | In prompt | Data-embedded evaluation |
 | `{scenario_id}.base.txt` | Scenario description only | External (runtime) | Agentic workflows |
 
-### Why Two Data Formats?
+### Prompt Format Roles
 
-Most existing benchmarks (NL4Opt, MAMO, IndustryOR) embed data directly in prompts. RetailOpt-190 supports both approaches:
+| Format | Role | Use Case |
+|--------|------|----------|
+| **Data-embedded** (`.full.txt`) | **Default evaluation format** | Standard evaluation, comparison with other benchmarks |
+| **Schema-based** (`.scenario.txt`) | Industrial-style format | Large datasets, production scenarios, agentic workflows |
+| **Agent base** (`.base.txt`) | Minimal prompt | Multi-step agents that inject their own guardrails |
 
-| Format | Advantages | Use Case |
-|--------|------------|----------|
-| **Schema-based** (`.scenario.txt`) | Scalable for large data, tests data access patterns | Production scenarios |
-| **Data-embedded** (`.full.txt`) | Compatible with other benchmarks, no external data | Unified benchmark comparison |
-
-This dual-format design enables:
-1. **Fair comparison** with other benchmarks using the same text-to-solution paradigm
-2. **Realistic evaluation** of data handling capabilities with schema-based prompts
+**Data-embedded (`prompt_full`) is the default evaluation format.** ReLoop and all baseline experiments use this format to maintain a consistent input structure across models and datasets (NL4Opt, MAMO, IndustryOR all embed data in prompts). Schema-based (`prompt_schema`) separates data from the prompt and loads it at runtime, which better reflects real-world industrial workflows where data volumes make in-prompt embedding impractical.
 
 ---
 
@@ -175,4 +172,4 @@ An instance is **correct** if:
 | Family | Tolerance (ε) |
 |--------|---------------|
 | F1–F5, F7–F8 | 0.01% |
-| F6 (Hard MIP) | 10% |
+| F6 (Hard MIP) | 5% |

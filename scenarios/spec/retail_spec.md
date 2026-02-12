@@ -21,7 +21,7 @@ All instances share a **single JSON schema** and are solved by a **single univer
 
 | Benchmark | Scenarios | Multi-period | Domain | Compositional |
 |-----------|-----------|--------------|--------|---------------|
-| NL4Opt | ~100 | Few | General OR | ✗ |
+| NL4Opt | 289 | Few | General OR | ✗ |
 | MAMO | ~800 | Some | General OR | ✗ |
 | IndustryOR | 100 | Some | Industrial | ✗ |
 | **RetailOpt-190** | 190 | All | Supply Chain | ✓ |
@@ -38,14 +38,14 @@ RetailOpt-190 provides **three prompt formats** for different evaluation scenari
 | `{id}.full.txt` | Scenario + full JSON data | In prompt | Data-embedded evaluation |
 | `{id}.base.txt` | Scenario description only | External (runtime) | Agentic workflows |
 
-### Why Two Data Formats?
+### Prompt Format Roles
 
-Most existing benchmarks (NL4Opt, MAMO, IndustryOR) embed data directly in prompts. RetailOpt-190 supports both:
+| Format | Field | Role | Use Case |
+|--------|-------|------|----------|
+| **Data-embedded** | `prompt_full` | **Default evaluation format** | Standard evaluation, comparison with other benchmarks |
+| **Schema-based** | `prompt_schema` | Industrial-style format | Large datasets, production scenarios, agentic workflows |
 
-| Format | Field | Advantages | Use Case |
-|--------|-------|------------|----------|
-| **Schema-based** | `prompt_schema` | Scalable for large data, tests data access | Production scenarios |
-| **Data-embedded** | `prompt_full` | Compatible with other benchmarks | Unified evaluation |
+**Data-embedded (`prompt_full`) is the default evaluation format.** ReLoop and all baseline experiments use this format to maintain a consistent input structure across models and datasets (NL4Opt, MAMO, IndustryOR all embed data in prompts). Schema-based (`prompt_schema`) separates data from the prompt and loads it at runtime, which better reflects real-world industrial workflows where data volumes make in-prompt embedding impractical.
 
 ### Schema-based Prompt Structure (`.scenario.txt`)
 
@@ -108,7 +108,7 @@ An instance is **correct** if:
 | Family | Problem Type | Tolerance (ε) |
 |--------|--------------|---------------|
 | F1–F5, F7–F8 | LP / easy MIP | 0.01% |
-| F6 | Hard MIP (MOQ, pack-size) | 10% |
+| F6 | Hard MIP (MOQ, pack-size) | 5% |
 
 ---
 
