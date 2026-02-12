@@ -39,7 +39,7 @@ Existing benchmarks (NL4Opt, MAMO, IndustryOR) focus on *translation fidelity*â€
 
 | Benchmark | Scenarios | Multi-period | Compositional |
 |-----------|-----------|--------------|---------------|
-| NL4Opt | ~100 | Few | No |
+| NL4Opt | 289 | Few | No |
 | MAMO | ~800 | Some | No |
 | IndustryOR | 100 | Some | No |
 | **RetailOpt-190** | **190** | **All** | **Yes** |
@@ -116,16 +116,15 @@ RetailOpt-190/
 
 RetailOpt-190 provides **three prompt formats** for different evaluation scenarios:
 
-### Why Two Data Formats?
+### Prompt Formats
 
-| Format | Data Location | Use Case |
-|--------|---------------|----------|
-| **Schema-based** | External (runtime) | Large datasets, production scenarios |
-| **Data-embedded** | In prompt | Direct comparison with other benchmarks |
+| Format | Data Location | Role | Use Case |
+|--------|---------------|------|----------|
+| **Data-embedded** (`.full.txt`) | In prompt | **Default evaluation format** | Direct comparison with other benchmarks (NL4Opt, MAMO, IndustryOR) |
+| **Schema-based** (`.scenario.txt`) | External (runtime) | ReLoop verification format | Large datasets, production scenarios, agentic workflows |
+| **Agent base** (`.base.txt`) | None | Minimal prompt | Multi-step agents that inject their own guardrails |
 
-Most existing benchmarks (NL4Opt, MAMO, IndustryOR) embed data directly in prompts. RetailOpt-190 supports both approaches:
-- **Schema-based**: Scalable for large data, tests data access patterns
-- **Data-embedded**: Compatible with other benchmarks for fair comparison in unified evaluation frameworks
+Most existing benchmarks embed data directly in prompts. **Data-embedded (`prompt_full`) is the primary format for standard evaluation.** Schema-based (`prompt_schema`) is used in the ReLoop pipeline where data is loaded at runtime.
 
 ### 1. Schema-based (`.scenario.txt`)
 
@@ -229,18 +228,18 @@ df = pd.read_parquet('retailopt_190.parquet')
 
 # Columns: scenario_id, prompt_schema, prompt_full, data, reference_status, reference_objective
 
-# Option A: Schema-based evaluation (data loaded at runtime)
+# Option A: Data-embedded evaluation (default, no external data needed)
+for _, row in df.iterrows():
+    prompt = row['prompt_full']  # Data is already in prompt
+    generated_code = your_llm(prompt)
+    exec(generated_code)  # Code parses JSON from prompt itself
+
+# Option B: Schema-based evaluation (ReLoop pipeline, data loaded at runtime)
 for _, row in df.iterrows():
     prompt = row['prompt_schema']
     data = json.loads(row['data'])
     generated_code = your_llm(prompt)
     exec(generated_code, {'data': data})  # Data pre-loaded
-
-# Option B: Data-embedded evaluation (no external data needed)
-for _, row in df.iterrows():
-    prompt = row['prompt_full']  # Data is already in prompt
-    generated_code = your_llm(prompt)
-    exec(generated_code)  # Code parses JSON from prompt itself
 ```
 
 ### 4. Load from individual files
@@ -250,19 +249,19 @@ import json
 
 scenario_id = 'retail_f1_base_v0'
 
-# Option A: Schema-based (.scenario.txt) - requires data loading
+# Option A: Data-embedded (.full.txt) - default evaluation format
+with open(f'scenarios/prompts/{scenario_id}.full.txt', 'r') as f:
+    prompt = f.read()  # Data is embedded in prompt
+generated_code = your_llm(prompt)
+exec(generated_code)  # Code parses JSON internally
+
+# Option B: Schema-based (.scenario.txt) - ReLoop pipeline
 with open(f'scenarios/prompts/{scenario_id}.scenario.txt', 'r') as f:
     prompt = f.read()
 with open(f'scenarios/data/{scenario_id}.json', 'r') as f:
     data = json.load(f)
 generated_code = your_llm(prompt)
 exec(generated_code, {'data': data})
-
-# Option B: Data-embedded (.full.txt) - no external data needed
-with open(f'scenarios/prompts/{scenario_id}.full.txt', 'r') as f:
-    prompt = f.read()  # Data is embedded in prompt
-generated_code = your_llm(prompt)
-exec(generated_code)  # Code parses JSON internally
 ```
 
 Ground truth results are stored in `eval/benchmark_results.csv` with columns:
@@ -288,7 +287,7 @@ Agents are evaluated under a fixed prompt-and-execute contract:
 | Family | Problem Type | Tolerance |
 |--------|--------------|-----------|
 | F1-F5, F7-F8 | LP / easy MIP | 0.01% |
-| F6 | Hard MIP (MOQ, pack-size) | 10% |
+| F6 | Hard MIP (MOQ, pack-size) | 5% |
 
 The relaxed tolerance for F6 accounts for binary/integer variables where the 60-second time limit may yield near-optimal solutions.
 

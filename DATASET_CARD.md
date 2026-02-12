@@ -65,21 +65,16 @@ The benchmark spans 8 scenario families and 38 archetypes covering core retail p
 
 English
 
-## Two Prompt Formats
+## Prompt Formats
 
-RetailOpt-190 provides **two prompt formats** for different evaluation scenarios:
+RetailOpt-190 provides **two prompt formats** in the dataset:
 
-| Format | Field | Data Location | Use Case |
-|--------|-------|---------------|----------|
-| **Schema-based** | `prompt_schema` | External (runtime) | Large datasets, tests data access patterns |
-| **Data-embedded** | `prompt_full` | In prompt | Direct comparison with other benchmarks |
+| Format | Field | Data Location | Role | Use Case |
+|--------|-------|---------------|------|----------|
+| **Data-embedded** | `prompt_full` | In prompt | **Default evaluation format** | Direct comparison with other benchmarks (NL4Opt, MAMO, IndustryOR) |
+| **Schema-based** | `prompt_schema` | External (runtime) | ReLoop verification format | Large datasets, agentic workflows |
 
-### Why Two Formats?
-
-Most existing benchmarks (NL4Opt, MAMO, IndustryOR) embed data directly in prompts. RetailOpt-190 supports both approaches to enable:
-
-1. **Fair comparison**: Use `prompt_full` when comparing with other benchmarks in unified evaluation frameworks
-2. **Scalability**: Use `prompt_schema` for production scenarios with large datasets
+Most existing benchmarks embed data directly in prompts. **Data-embedded (`prompt_full`) is the primary format for standard evaluation.** Schema-based (`prompt_schema`) is used in the ReLoop pipeline where data is loaded at runtime.
 
 Both formats provide the **same semantic information**—only the data delivery method differs.
 
@@ -118,9 +113,27 @@ print(sample['prompt_schema'][:200])  # Schema-based prompt
 print(sample['prompt_full'][:200])    # Data-embedded prompt
 ```
 
-### Option A: Schema-based Evaluation
+### Option A: Data-embedded Evaluation (Default)
 
-Use `prompt_schema` when you need external data loading (matches production scenarios):
+Use `prompt_full` for standard evaluation (compatible with other benchmarks):
+
+```python
+from datasets import load_dataset
+
+dataset = load_dataset("Jacoblian/RetailOpt-190", split="test")
+
+for sample in dataset:
+    prompt = sample['prompt_full']  # Data is already in prompt
+
+    generated_code = your_llm(prompt)
+    exec(generated_code)  # Code parses JSON from prompt itself
+
+    print(f"Reference: {sample['reference_status']}, {sample['reference_objective']}")
+```
+
+### Option B: Schema-based Evaluation
+
+Use `prompt_schema` when you need external data loading (ReLoop pipeline, agentic workflows):
 
 ```python
 from datasets import load_dataset
@@ -138,24 +151,6 @@ for sample in dataset:
     print(f"Reference: {sample['reference_status']}, {sample['reference_objective']}")
 ```
 
-### Option B: Data-embedded Evaluation
-
-Use `prompt_full` for direct text-to-solution evaluation (compatible with other benchmarks):
-
-```python
-from datasets import load_dataset
-
-dataset = load_dataset("Jacoblian/RetailOpt-190", split="test")
-
-for sample in dataset:
-    prompt = sample['prompt_full']  # Data is already in prompt
-
-    generated_code = your_llm(prompt)
-    exec(generated_code)  # Code parses JSON from prompt itself
-
-    print(f"Reference: {sample['reference_status']}, {sample['reference_objective']}")
-```
-
 ### Evaluation Metrics
 
 - **Execution Rate**: Percentage of instances that run without error
@@ -167,7 +162,7 @@ for sample in dataset:
 | Family | Problem Type | Tolerance |
 |--------|--------------|-----------|
 | F1-F5, F7-F8 | LP / easy MIP | 0.01% |
-| F6 | Hard MIP (MOQ, pack-size) | 10% |
+| F6 | Hard MIP (MOQ, pack-size) | 5% |
 
 ## Dataset Creation
 
