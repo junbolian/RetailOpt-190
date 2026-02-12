@@ -74,7 +74,7 @@ RetailOpt-190 provides **two prompt formats** in the dataset:
 | **Data-embedded** | `prompt_full` | In prompt | **Default evaluation format** | Direct comparison with other benchmarks (NL4Opt, MAMO, IndustryOR) |
 | **Schema-based** | `prompt_schema` | External (runtime) | ReLoop verification format | Large datasets, agentic workflows |
 
-Most existing benchmarks embed data directly in prompts. **Data-embedded (`prompt_full`) is the primary format for standard evaluation.** Schema-based (`prompt_schema`) is used in the ReLoop pipeline where data is loaded at runtime.
+**Data-embedded (`prompt_full`) is the default evaluation format.** ReLoop and all baseline experiments use this format to maintain a consistent input structure across models and datasets (NL4Opt, MAMO, IndustryOR all embed data in prompts). Schema-based (`prompt_schema`) separates data from the prompt and loads it at runtime, which better reflects real-world industrial workflows where data volumes make in-prompt embedding impractical.
 
 Both formats provide the **same semantic information**—only the data delivery method differs.
 

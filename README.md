@@ -124,7 +124,7 @@ RetailOpt-190 provides **three prompt formats** for different evaluation scenari
 | **Schema-based** (`.scenario.txt`) | External (runtime) | ReLoop verification format | Large datasets, production scenarios, agentic workflows |
 | **Agent base** (`.base.txt`) | None | Minimal prompt | Multi-step agents that inject their own guardrails |
 
-Most existing benchmarks embed data directly in prompts. **Data-embedded (`prompt_full`) is the primary format for standard evaluation.** Schema-based (`prompt_schema`) is used in the ReLoop pipeline where data is loaded at runtime.
+**Data-embedded (`prompt_full`) is the default evaluation format.** ReLoop and all baseline experiments use this format to maintain a consistent input structure across models and datasets (NL4Opt, MAMO, IndustryOR all embed data in prompts). Schema-based (`prompt_schema`) separates data from the prompt and loads it at runtime, which better reflects real-world industrial workflows where data volumes make in-prompt embedding impractical.
 
 ### 1. Schema-based (`.scenario.txt`)
 
