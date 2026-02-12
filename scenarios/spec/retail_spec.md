@@ -105,10 +105,12 @@ An instance is **correct** if:
 1. Solver status matches ground truth (both feasible, or both infeasible)
 2. For feasible instances: |y_pred - y_ref| / |y_ref| < ε
 
-| Family | Problem Type | Tolerance (ε) |
-|--------|--------------|---------------|
-| F1–F5, F7–F8 | LP / easy MIP | 0.01% |
-| F6 | Hard MIP (MOQ, pack-size) | 5% |
+| Scenarios | Problem Type | Tolerance (ε) |
+|-----------|--------------|---------------|
+| F1–F5, F6 (lead_time, moq_binary), F7–F8 | LP / easy MIP | 0.01% |
+| F6 (pack_size_integer, fixed_order_cost) | Hard MIP, hits 60s time limit | 1% |
+
+Only `pack_size_integer` and `fixed_order_cost` hit the 60-second time limit; the other F6 archetypes solve to optimality within seconds.
 
 ---
 

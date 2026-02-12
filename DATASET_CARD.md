@@ -159,10 +159,12 @@ for sample in dataset:
 
 ### Accuracy Tolerances
 
-| Family | Problem Type | Tolerance |
-|--------|--------------|-----------|
-| F1-F5, F7-F8 | LP / easy MIP | 0.01% |
-| F6 | Hard MIP (MOQ, pack-size) | 5% |
+| Scenarios | Problem Type | Tolerance |
+|-----------|--------------|-----------|
+| F1-F5, F6 (lead_time, moq_binary), F7-F8 | LP / easy MIP | 0.01% |
+| F6 (pack_size_integer, fixed_order_cost) | Hard MIP, hits 60s time limit | 1% |
+
+Only 2 of the 4 F6 archetypes require the relaxed tolerance. `pack_size_integer` and `fixed_order_cost` hit the 60-second time limit and return near-optimal solutions; the other F6 archetypes solve to optimality within seconds.
 
 ## Dataset Creation
 

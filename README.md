@@ -284,12 +284,12 @@ Agents are evaluated under a fixed prompt-and-execute contract:
 
 ### Accuracy Tolerances
 
-| Family | Problem Type | Tolerance |
-|--------|--------------|-----------|
-| F1-F5, F7-F8 | LP / easy MIP | 0.01% |
-| F6 | Hard MIP (MOQ, pack-size) | 5% |
+| Scenarios | Problem Type | Tolerance |
+|-----------|--------------|-----------|
+| F1-F5, F6 (lead_time, moq_binary), F7-F8 | LP / easy MIP | 0.01% |
+| F6 (pack_size_integer, fixed_order_cost) | Hard MIP, hits 60s time limit | 1% |
 
-The relaxed tolerance for F6 accounts for binary/integer variables where the 60-second time limit may yield near-optimal solutions.
+Only 2 of the 4 F6 archetypes (`pack_size_integer` and `fixed_order_cost`) require the relaxed 1% tolerance. These are the only scenarios where the solver hits the 60-second time limit and returns a near-optimal rather than provably optimal solution. The other F6 archetypes (`lead_time`, `moq_binary`) solve to optimality within seconds and use the standard 0.01% tolerance.
 
 ### Evaluation Metrics
 
