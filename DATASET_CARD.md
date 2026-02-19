@@ -36,12 +36,16 @@ dataset_info:
 
 # RetailOpt-190: A Retail Supply Chain Benchmark for Text-to-Optimization
 
+[![arXiv](https://img.shields.io/badge/arXiv-2602.15983-b31b1b.svg)](https://arxiv.org/abs/2602.15983)
+[![GitHub](https://img.shields.io/badge/GitHub-RetailOpt--190-blue?logo=github)](https://github.com/junbolian/RetailOpt-190)
+[![License: Data](https://img.shields.io/badge/Data-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
+
 **RetailOpt-190** is a solver-validated benchmark for evaluating semantic reliability in text-to-optimization. It tests whether LLM-based agents can reconstruct the intended optimization structure—not just produce runnable code.
 
 ## Dataset Description
 
-- **Repository:** [https://github.com/Jacoblian/RetailOpt-190](https://github.com/Jacoblian/RetailOpt-190)
-- **Paper:** ReLoop: Structured Modeling and Behavioral Verification for Reliable LLM-Based Optimization
+- **Repository:** [https://github.com/junbolian/RetailOpt-190](https://github.com/junbolian/RetailOpt-190)
+- **Paper:** [ReLoop: Structured Modeling and Behavioral Verification for Reliable LLM-Based Optimization](https://arxiv.org/abs/2602.15983)
 - **Point of Contact:** Junbo Jacob Lian
 
 ### Dataset Summary
