@@ -41,7 +41,7 @@ dataset_info:
 ## Dataset Description
 
 - **Repository:** [https://github.com/Jacoblian/RetailOpt-190](https://github.com/Jacoblian/RetailOpt-190)
-- **Paper:** ReLoop: Detecting Silent Failures in LLM-Generated Optimization Code via Behavioral Verification
+- **Paper:** ReLoop: Structured Modeling and Behavioral Verification for Reliable LLM-Based Optimization
 - **Point of Contact:** Junbo Jacob Lian
 
 ### Dataset Summary
@@ -186,9 +186,10 @@ Ground truth solutions are computed using a validated MILP solver (Gurobi) with 
 ```bibtex
 @article{lian2026reloop,
   author    = {Junbo Jacob Lian and Yujun Sun and Huiling Chen and Chaoyu Zhang and Chung-Piaw Teo},
-  title     = {ReLoop: Detecting Silent Failures in LLM-Generated Optimization Code via Behavioral Verification},
-  journal   = {arXiv preprint},
-  year      = {2026}
+  title     = {ReLoop: Structured Modeling and Behavioral Verification for Reliable LLM-Based Optimization},
+  journal   = {arXiv preprint arXiv:2602.15983},
+  year      = {2026},
+  url       = {https://arxiv.org/abs/2602.15983}
 }
 ```
 

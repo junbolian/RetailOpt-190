@@ -10,7 +10,7 @@ The benchmark provides **190 JSON instances** (38 archetypes x 5 variations) cov
 
 This repository contains the **standalone benchmark dataset** from the paper:
 
-> **ReLoop: Detecting Silent Failures in LLM-Generated Optimization Code via Behavioral Verification**
+> **ReLoop: Structured Modeling and Behavioral Verification for Reliable LLM-Based Optimization**
 >
 > Junbo Jacob Lian, Yujun Sun, Huiling Chen, Chaoyu Zhang, Chung-Piaw Teo
 
@@ -29,7 +29,7 @@ Researchers can use this dataset to benchmark their own LLMs or optimization age
 
 - **Hugging Face Dataset**: [https://huggingface.co/datasets/Jacoblian/RetailOpt-190](https://huggingface.co/datasets/Jacoblian/RetailOpt-190) - Download dataset directly
 - **ReLoop Framework**: [https://github.com/junbolian/ReLoop](https://github.com/junbolian/ReLoop) - Complete implementation of the ReLoop verification pipeline
-- **Paper**: Link to be added upon publication
+- **Paper**: [arXiv:2602.15983](https://arxiv.org/abs/2602.15983)
 
 ---
 
@@ -421,9 +421,10 @@ If you use RetailOpt-190 in your research, please cite our paper:
 ```bibtex
 @article{lian2026reloop,
   author    = {Junbo Jacob Lian and Yujun Sun and Huiling Chen and Chaoyu Zhang and Chung-Piaw Teo},
-  title     = {ReLoop: Detecting Silent Failures in LLM-Generated Optimization Code via Behavioral Verification},
-  journal   = {arXiv preprint},
-  year      = {2026}
+  title     = {ReLoop: Structured Modeling and Behavioral Verification for Reliable LLM-Based Optimization},
+  journal   = {arXiv preprint arXiv:2602.15983},
+  year      = {2026},
+  url       = {https://arxiv.org/abs/2602.15983}
 }
 ```
 
