@@ -1,5 +1,11 @@
 # RetailOpt-190: A Retail Supply Chain Benchmark for Text-to-Optimization
 
+[![arXiv](https://img.shields.io/badge/arXiv-2602.15983-b31b1b.svg)](https://arxiv.org/abs/2602.15983)
+[![Dataset](https://img.shields.io/badge/%F0%9F%A4%97%20HuggingFace-RetailOpt--190-yellow)](https://huggingface.co/datasets/Jacoblian/RetailOpt-190)
+[![Code](https://img.shields.io/badge/GitHub-RetailOpt--190-blue?logo=github)](https://github.com/junbolian/RetailOpt-190)
+[![License: Code](https://img.shields.io/badge/Code-MIT-green.svg)](LICENSE)
+[![License: Data](https://img.shields.io/badge/Data-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
+
 **RetailOpt-190** is a solver-validated benchmark for evaluating **semantic reliability** in text-to-optimization. It tests whether LLM-based agents can reconstruct the *intended optimization structure*—not just produce runnable code.
 
 The benchmark provides **190 JSON instances** (38 archetypes x 5 variations) covering common retail supply chain mechanisms, together with a reference MILP solver and standardized evaluation protocol.
