@@ -38,6 +38,7 @@ dataset_info:
 
 [![arXiv](https://img.shields.io/badge/arXiv-2602.15983-b31b1b.svg)](https://arxiv.org/abs/2602.15983)
 [![GitHub](https://img.shields.io/badge/GitHub-RetailOpt--190-blue?logo=github)](https://github.com/junbolian/RetailOpt-190)
+[![ReLoop](https://img.shields.io/badge/GitHub-ReLoop-blue?logo=github)](https://github.com/junbolian/ReLoop)
 [![License: Data](https://img.shields.io/badge/Data-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
 **RetailOpt-190** is a solver-validated benchmark for evaluating semantic reliability in text-to-optimization. It tests whether LLM-based agents can reconstruct the intended optimization structure—not just produce runnable code.

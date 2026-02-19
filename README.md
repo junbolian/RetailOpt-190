@@ -3,6 +3,7 @@
 [![arXiv](https://img.shields.io/badge/arXiv-2602.15983-b31b1b.svg)](https://arxiv.org/abs/2602.15983)
 [![Dataset](https://img.shields.io/badge/%F0%9F%A4%97%20HuggingFace-RetailOpt--190-yellow)](https://huggingface.co/datasets/Jacoblian/RetailOpt-190)
 [![Code](https://img.shields.io/badge/GitHub-RetailOpt--190-blue?logo=github)](https://github.com/junbolian/RetailOpt-190)
+[![ReLoop](https://img.shields.io/badge/GitHub-ReLoop-blue?logo=github)](https://github.com/junbolian/ReLoop)
 [![License: Code](https://img.shields.io/badge/Code-MIT-green.svg)](LICENSE)
 [![License: Data](https://img.shields.io/badge/Data-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
