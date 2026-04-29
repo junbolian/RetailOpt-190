@@ -446,7 +446,7 @@ If you use RetailOpt-190 in your research, please cite our paper:
 
 ```bibtex
 @article{lian2026reloop,
-  author    = {Junbo Jacob Lian and Yujun Sun and Huiling Chen and Chaoyu Zhang and Chung-Piaw Teo},
+  author    = {Junbo Jacob Lian and Yujun Sun and Huiling Chen and Chaoyu Zhang and Hanzhang Qin and Chung-Piaw Teo},
   title     = {ReLoop: Structured Modeling and Behavioral Verification for Reliable LLM-Based Optimization},
   journal   = {arXiv preprint arXiv:2602.15983},
   year      = {2026},
