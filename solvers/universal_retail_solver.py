@@ -269,6 +269,15 @@ def solve_scenario(data, summarize=True):
                     total_sales + L[(p, l, t)] == demand[(p, l, t)] + inbound - outbound,
                     name=f"sales_conservation_{p}_{l}_{t}",
                 )
+                # Substituted demand absorbed at p must be backed by actual
+                # sales from p's inventory; without this, the solver can route
+                # unmet demand from high-penalty products to low-penalty
+                # products through substitution variables without using any
+                # inventory, producing a fictitious cost reduction.
+                m.addConstr(
+                    inbound <= total_sales,
+                    name=f"sub_inventory_binding_{p}_{l}_{t}",
+                )
 
     # ==========================================
     # 5. Objective

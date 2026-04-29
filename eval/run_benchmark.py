@@ -1,11 +1,10 @@
 # ==============================================================================
 # FILE: run_benchmark.py
-# LOCATION: reloop/eval/
+# LOCATION: RetailOpt-190/eval/
 #
 # DESCRIPTION:
-#   Executes the Universal Retail Solver on all JSON instances in the
-#   "retail_comprehensive/data" directory (e.g., the Retail-160 benchmark and
-#   any extensions). For each scenario it records:
+#   Executes the Universal Retail Solver on all 190 JSON instances in
+#   scenarios/data/. For each scenario it records:
 #     - scenario name
 #     - solver status (e.g., OPTIMAL, OPTIMAL (TL), INFEASIBLE)
 #     - objective string as printed by the solver
@@ -95,7 +94,7 @@ def _extract_summary(stdout_text: str, expected_name: str):
 def main():
     # 1. Define paths
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    data_dir = os.path.join(base_dir, "scenarios", "retail_comprehensive", "data")
+    data_dir = os.path.join(base_dir, "scenarios", "data")
     solver_script = os.path.join(base_dir, "solvers", "universal_retail_solver.py")
 
     output_csv = os.path.join(base_dir, "eval", "benchmark_results.csv")
@@ -103,7 +102,6 @@ def main():
     # 2. Sanity checks
     if not os.path.exists(data_dir):
         print(f"ERROR: Data dir not found: {data_dir}")
-        print("Please run 'tools/retail_benchmark_generator.py' first.")
         return
 
     json_files = sorted(glob.glob(os.path.join(data_dir, "*.json")))
