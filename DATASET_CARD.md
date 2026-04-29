@@ -185,6 +185,8 @@ All archetypes share a common shelf-life-aware inventory accounting. Inventory i
 
 `Q[p, l, t]` is the **per-location** order quantity (decision variable); aggregate production capacity couples across locations: `sum_l Q[p,l,t] <= production_cap[p][t]`. `transshipment_net = 0` when `trans_edges = []`, and `returns = return_rate[p] * sum_a sales[p,l,t-1,a]`.
 
+**Substitution semantics.** Edge `[p_from, p_to]` in `network.sub_edges` means `p_to`'s inventory can serve `p_from`'s demand. The sub-inventory binding `sum_{p_from} S[p_from, p, l, t] <= sum_r sales[p, l, t, r]` ensures absorbed substitution demand at product `p` is backed by real sales from `p`'s inventory — without this, the optimizer could fictitiously route high-penalty unmet demand through substitution variables alone.
+
 ## Dataset Creation
 
 ### Source Data

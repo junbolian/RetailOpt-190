@@ -272,7 +272,15 @@ sum_r sales[p_from, l, t, r] + S[p_from, p_to, l, t] + L[p_from, l, t] = demand[
 sum_r sales[p_to,   l, t, r] − S[p_from, p_to, l, t] + L[p_to,   l, t] = demand[p_to,   l, t]
 ```
 
-When `sub_edges = []`, only the diagonal `total_sales[p] + L[p] = demand[p]` applies.
+**Sub-inventory binding** (incoming substitution must be backed by real sales at the absorbing product):
+
+```
+sum_{p_from} S[p_from, p, l, t]  <=  sum_r sales[p, l, t, r]    for every p, l, t
+```
+
+This prevents the optimizer from "absorbing" foreign demand at a low-penalty product without actually drawing from its inventory — which would otherwise give a fictitious cost reduction by routing high-penalty unmet demand through substitution variables alone.
+
+When `sub_edges = []`, only the diagonal `total_sales[p] + L[p] = demand[p]` applies and the binding above is vacuous.
 
 ### Capacity & Auxiliary Constraints
 

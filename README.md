@@ -360,6 +360,7 @@ Each instance follows a universal schema:
 **Substitution edges**: `[p_from, p_to]` means `p_from`'s demand can be served by `p_to`'s inventory (upward substitution).
 - Example: `["SKU_Basic", "SKU_Premium"]` means Premium can serve Basic's demand when Basic stock is insufficient.
 - `S[Basic, Premium, l, t]` = units of Basic's demand fulfilled by Premium at location l in period t.
+- **Sub-inventory binding**: `sum_{p_from} S[p_from, p, l, t] <= sum_r sales[p, l, t, r]` — incoming substitution at product `p` must be backed by actual sales drawn from `p`'s inventory. Without this binding, a cost-minimizing solver could fictitiously absorb high-penalty unmet demand at a low-penalty product through substitution variables alone.
 
 **Network data access**: Use nested safe access pattern:
 ```python

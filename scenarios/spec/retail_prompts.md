@@ -107,7 +107,7 @@ The schema-based prompt (`{scenario_id}.scenario.txt`) contains:
 | `labor_cap/labor_usage` | Labor constraint: `sum(labor_usage[p] * units_handled[p,l,t]) <= labor_cap[l,t]` |
 | `return_rate` | Returns: `return_rate[p] * sum_a sales[p,l,t-1,a]` units re-enter as fresh inventory in period `t` |
 | `waste_limit_pct` | Global waste cap: `sum(waste) <= waste_limit_pct * sum(demand)` |
-| `sub_edges` | Edge `[A, B]` means A's demand can be served by B's inventory (upward substitution). |
+| `sub_edges` | Edge `[A, B]` means A's demand can be served by B's inventory (upward substitution). Sub-inventory binding: `sum_{p_from} S[p_from, p, l, t] <= sum_r sales[p, l, t, r]`. |
 | `trans_edges` | Edge `[L1, L2]` means inventory can move from L1 to L2 at transshipment cost. |
 
 ### Inventory Dynamics (Shared Across All Archetypes)
