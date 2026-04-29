@@ -100,14 +100,37 @@ The schema-based prompt (`{scenario_id}.scenario.txt`) contains:
 
 | Parameter | Constraint Semantics |
 |-----------|---------------------|
-| `shelf_life` | Inventory tracked by **remaining life**. Fresh arrivals enter at `r = shelf_life[p]`. Units at `r=1` not sold become waste. |
+| `shelf_life` | Inventory tracked by **remaining life** `r`. Fresh arrivals enter at `r = shelf_life[p]`. Units at `r=1` not sold become waste. |
 | `cold_capacity/cold_usage` | Volume-weighted storage: `sum(cold_usage[p] * inventory[p,l,t]) <= cold_capacity[l]` |
-| `lead_time` | Orders placed in period t arrive in period t + lead_time[p]. |
+| `lead_time` | Orders placed in period `t` arrive in period `t + lead_time[p]`. Treat `Q[p,l,s] = 0` for `s < 1`. |
+| `production_cap` | Aggregated across locations: `sum_l Q[p,l,t] <= production_cap[p][t]` |
 | `labor_cap/labor_usage` | Labor constraint: `sum(labor_usage[p] * units_handled[p,l,t]) <= labor_cap[l,t]` |
-| `return_rate` | Returns: `return_rate[p] * sales[p,l,t]` units re-enter inventory in period t+1 |
+| `return_rate` | Returns: `return_rate[p] * sum_a sales[p,l,t-1,a]` units re-enter as fresh inventory in period `t` |
 | `waste_limit_pct` | Global waste cap: `sum(waste) <= waste_limit_pct * sum(demand)` |
-| `sub_edges` | Edge [A, B] means A's demand can be served by B's inventory (upward substitution). |
-| `trans_edges` | Edge [L1, L2] means inventory can move from L1 to L2 at transshipment cost. |
+| `sub_edges` | Edge `[A, B]` means A's demand can be served by B's inventory (upward substitution). |
+| `trans_edges` | Edge `[L1, L2]` means inventory can move from L1 to L2 at transshipment cost. |
+
+### Inventory Dynamics (Shared Across All Archetypes)
+
+The business descriptions reference a uniform set of equations (per product `p`, location `l`, period `t`, age bucket `r`):
+
+```
+(1) Fresh inflow (r = SL):
+    I[p,l,t,SL] = Q[p,l,t-LT[p]] + transshipment_net[p,l,t] + returns[p,l,t]
+
+(2) Aging (r = 1..SL-1):
+    I[p,l,t+1,r] = I[p,l,t,r+1] - sales[p,l,t,r+1]
+
+(3) Waste:
+    W[p,l,t] = I[p,l,t,1] - sales[p,l,t,1]
+
+(4) Sales availability:
+    sales[p,l,t,r] <= I[p,l,t,r]
+
+(5) Holding cost charged on (I[p,l,t,r] - sales[p,l,t,r]) for r >= 2 only.
+```
+
+`Q[p,l,t]` is **per-location** (decision variable), and `transshipment_net` is `0` whenever `trans_edges = []`.
 
 ### Data Access Section
 

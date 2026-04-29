@@ -198,7 +198,105 @@ prod_cap = data['production_cap'][p][t-1]
 
 ---
 
-## 6. Solver Settings
+## 6. Inventory Dynamics (Perishability)
+
+All archetypes share a common shelf-life-aware inventory accounting. Inventory is indexed by `(p, l, t, r)` where `r` is the **remaining periods of life**.
+
+### Variable Definitions
+
+| Symbol | Meaning |
+|--------|---------|
+| `Q[p, l, t]` | Per-location order quantity placed in period `t` for product `p` |
+| `I[p, l, t, r]` | Inventory at the **start** of period `t` with `r` periods of life remaining |
+| `sales[p, l, t, r]` | Units of product `p` sold from age-bucket `r` at location `l` in period `t` |
+| `W[p, l, t]` | Waste (expired units that were not sold) |
+| `L[p, l, t]` | Lost sales (unmet demand after substitution) |
+| `S[p_from, p_to, l, t]` | Substitution flow: units of `p_from`'s demand fulfilled by `p_to`'s inventory |
+| `X[p, l_src, l_dst, t]` | Transshipment flow from `l_src` to `l_dst` |
+
+### Convention
+
+- `r = 1` is the **OLDEST** age bucket (FIFO: must be sold first or wasted).
+- `r = shelf_life[p]` is the **FRESHEST** bucket (newly arrived).
+
+### Key Equations
+
+**(1) Fresh inflow** (only the freshest age bucket receives new units):
+
+```
+I[p, l, t, SL] = Q[p, l, t - LT[p]] + transshipment_net[p, l, t] + returns[p, l, t]
+```
+
+- `Q[p, l, t]` is the **per-location** decision variable. Treat `Q[p, l, s] = 0` for `s < 1`.
+- `LT[p] = lead_time[p]` (orders arrive after this many periods).
+- `transshipment_net[p, l, t] = sum over (l_src, l) in trans_edges of X[p, l_src, l, t] − sum over (l, l_dst) in trans_edges of X[p, l, l_dst, t]`. Zero when `network.trans_edges` is empty.
+- `returns[p, l, t] = return_rate[p] * sum over a of sales[p, l, t-1, a]` for `t > 1`, else `0`.
+- This channel is **only** the fresh inflow — do **not** subtract sales here.
+
+**Aggregate production capacity** (couples per-location orders to product capacity):
+
+```
+sum over l of Q[p, l, t]  <=  production_cap[p][t]
+```
+
+**(2) Aging** (yesterday's age-`r+1` becomes today's age-`r` after sales of the older bucket):
+
+```
+I[p, l, t+1, r] = I[p, l, t, r+1] − sales[p, l, t, r+1]      for r = 1 .. SL-1
+```
+
+**(3) Waste** (anything in the oldest bucket not sold becomes waste):
+
+```
+W[p, l, t] = I[p, l, t, 1] − sales[p, l, t, 1]
+```
+
+**(4) Sales availability** (cannot sell more than is on hand in each age bucket):
+
+```
+sales[p, l, t, r]  <=  I[p, l, t, r]
+```
+
+**(5) Holding cost** (charged on end-of-period inventory in non-expiring buckets, `r >= 2`):
+
+```
+holding_cost = sum_{p,l,t,r>=2} inventory_cost[p] * (I[p, l, t, r] − sales[p, l, t, r])
+```
+
+### Demand Fulfillment with Substitution
+
+For substitution edge `[p_from, p_to]` (means: `p_to`'s inventory can serve `p_from`'s demand):
+
+```
+sum_r sales[p_from, l, t, r] + S[p_from, p_to, l, t] + L[p_from, l, t] = demand[p_from, l, t]
+sum_r sales[p_to,   l, t, r] − S[p_from, p_to, l, t] + L[p_to,   l, t] = demand[p_to,   l, t]
+```
+
+When `sub_edges = []`, only the diagonal `total_sales[p] + L[p] = demand[p]` applies.
+
+### Capacity & Auxiliary Constraints
+
+| Constraint | Form |
+|------------|------|
+| Storage | `sum_p cold_usage[p] * total_inventory[p, l, t]  <=  cold_capacity[l]` |
+| Labor | `sum_p labor_usage[p] * units_handled[p, l, t]  <=  labor_cap[l, t]` |
+| Budget | `sum_{p,l} purchasing[p] * Q[p, l, t] (+ fixed_order * z[p, l, t])  <=  budget_per_period` |
+| Waste cap | `sum_{p,l,t} W[p, l, t]  <=  waste_limit_pct * sum demand` |
+| MOQ | `Q[p, l, t] = 0  OR  Q[p, l, t] >= moq` (binary `z`) |
+| Pack size | `Q[p, l, t] = pack_size * n[p, l, t]`, `n` integer |
+| Fixed order | `Q[p, l, t] > 0  =>  fixed_order` charged once via binary `z[p, l, t]` |
+
+### Objective
+
+Minimize total cost over the horizon:
+
+```
+min  sum (purchasing + inventory + waste + lost_sales + transshipment + fixed_order)
+```
+
+---
+
+## 7. Solver Settings
 
 | Parameter | Value | Purpose |
 |-----------|-------|---------|

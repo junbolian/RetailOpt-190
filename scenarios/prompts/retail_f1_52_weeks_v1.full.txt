@@ -16,11 +16,17 @@ Structure cues:
   VARIABLE DEFINITION: I[p,l,t,r] = inventory at START of period t with r periods remaining.
   Convention: r=1 is OLDEST (sell first FIFO), r=shelf_life[p] is FRESHEST.
 
-  KEY EQUATIONS - implement EXACTLY as written, do NOT add or remove terms:
+  KEY EQUATIONS - implement these conventions consistently with the JSON data:
 
-  (1) Fresh inflow: I[p,l,t,SL] = Q[p,t] * demand_share[l]
-      - This is ONLY the inflow from production. Do NOT subtract sales here!
-      - Q is total production, demand_share distributes it to locations.
+  (1) Fresh inflow: I[p,l,t,SL] = Q[p,l,t-LT[p]] + transshipment_net[p,l,t] + returns[p,l,t]
+      - Q[p,l,t] is the per-LOCATION order quantity (decision variable indexed by location l)
+      - LT[p] = lead_time[p]; treat Q[p,l,s] as 0 for s < 1 (no orders before period 1)
+      - Aggregate production constraint: sum over locations of Q[p,l,t] <= production_cap[p][t]
+      - transshipment_net = sum over (l_src, l) in trans_edges of X[p,l_src,l,t]
+                           minus sum over (l, l_dst) in trans_edges of X[p,l,l_dst,t]
+                           (zero when network.trans_edges is empty)
+      - returns = return_rate[p] * sum over a of sales[p,l,t-1,a] when t > 1, else 0
+      - This is ONLY the fresh-inflow channel; do NOT subtract sales here.
 
   (2) Aging: I[p,l,t+1,r] = I[p,l,t,r+1] - sales[p,l,t,r+1] for r=1..SL-1
       - Inventory tomorrow with r remaining = inventory today with r+1 remaining - sales

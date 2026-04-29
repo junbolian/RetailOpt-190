@@ -19,7 +19,7 @@ This repository contains the **standalone benchmark dataset** from the paper:
 
 > **ReLoop: Structured Modeling and Behavioral Verification for Reliable LLM-Based Optimization**
 >
-> Junbo Jacob Lian, Yujun Sun, Huiling Chen, Chaoyu Zhang, Chung-Piaw Teo
+> Junbo Jacob Lian, Yujun Sun, Huiling Chen, Chaoyu Zhang, Hanzhang Qin, Chung-Piaw Teo
 
 RetailOpt-190 is released as an independent dataset to facilitate research in LLM-based optimization. This repository provides:
 
@@ -372,6 +372,25 @@ trans_edges = data.get('network', {}).get('trans_edges', [])
 ```python
 demand[p, l, t] = data['demand_curve'][p][t-1] * data['demand_share'][l]
 ```
+
+### Inventory Dynamics (Shelf-Life Tracking)
+
+All archetypes index inventory by `(p, l, t, r)` where `r` is the **remaining periods of life** (FIFO: `r=1` is oldest, `r=shelf_life[p]` is freshest):
+
+```
+(1) Fresh inflow:    I[p,l,t,SL] = Q[p,l,t-LT[p]] + transshipment_net[p,l,t] + returns[p,l,t]
+(2) Aging:           I[p,l,t+1,r] = I[p,l,t,r+1] - sales[p,l,t,r+1]   for r = 1..SL-1
+(3) Waste:           W[p,l,t] = I[p,l,t,1] - sales[p,l,t,1]
+(4) Sales bound:     sales[p,l,t,r] <= I[p,l,t,r]
+(5) Holding cost charged on (I[p,l,t,r] - sales[p,l,t,r]) for r >= 2 only.
+```
+
+Key conventions:
+
+- `Q[p, l, t]` is the **per-location** order quantity (decision variable). Aggregate production capacity binds across locations: `sum_l Q[p,l,t] <= production_cap[p][t]`.
+- `transshipment_net[p, l, t] = inflow − outflow` along `trans_edges`. Zero when `trans_edges = []`.
+- `returns[p, l, t] = return_rate[p] * sum_a sales[p, l, t-1, a]` for `t > 1`, else `0`.
+- Treat `Q[p, l, s] = 0` for `s < 1` (no orders placed before the horizon).
 
 ---
 

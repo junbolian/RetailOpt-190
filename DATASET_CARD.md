@@ -171,6 +171,20 @@ for sample in dataset:
 
 Only 2 of the 4 F6 archetypes require the relaxed tolerance. `pack_size_integer` and `fixed_order_cost` hit the 60-second time limit and return near-optimal solutions; the other F6 archetypes solve to optimality within seconds.
 
+## Inventory Dynamics
+
+All archetypes share a common shelf-life-aware inventory accounting. Inventory is indexed by `(p, l, t, r)` where `r` is the **remaining periods of life** (FIFO: `r=1` is oldest, `r=shelf_life[p]` is freshest):
+
+```
+(1) Fresh inflow:    I[p,l,t,SL] = Q[p,l,t-LT[p]] + transshipment_net[p,l,t] + returns[p,l,t]
+(2) Aging:           I[p,l,t+1,r] = I[p,l,t,r+1] - sales[p,l,t,r+1]   for r = 1..SL-1
+(3) Waste:           W[p,l,t] = I[p,l,t,1] - sales[p,l,t,1]
+(4) Sales bound:     sales[p,l,t,r] <= I[p,l,t,r]
+(5) Holding cost charged on (I[p,l,t,r] - sales[p,l,t,r]) for r >= 2 only.
+```
+
+`Q[p, l, t]` is the **per-location** order quantity (decision variable); aggregate production capacity couples across locations: `sum_l Q[p,l,t] <= production_cap[p][t]`. `transshipment_net = 0` when `trans_edges = []`, and `returns = return_rate[p] * sum_a sales[p,l,t-1,a]`.
+
 ## Dataset Creation
 
 ### Source Data
