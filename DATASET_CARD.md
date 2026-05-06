@@ -15,6 +15,11 @@ tags:
 - code-generation
 - benchmark
 pretty_name: RetailOpt-190
+configs:
+- config_name: default
+  data_files:
+  - split: test
+    path: retailopt_190.parquet
 dataset_info:
   features:
     - name: scenario_id
