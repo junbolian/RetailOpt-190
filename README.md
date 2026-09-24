@@ -446,10 +446,10 @@ Full specification: `scenarios/spec/retail_spec.md`
 If you use RetailOpt-190 in your research, please cite our paper:
 
 ```bibtex
-@article{lian2026reloop,
-  author    = {Junbo Jacob Lian and Yujun Sun and Huiling Chen and Chaoyu Zhang and Hanzhang Qin and Chung-Piaw Teo},
-  title     = {ReLoop: Structured Modeling and Behavioral Verification for Reliable LLM-Based Optimization},
-  journal   = {arXiv preprint arXiv:2602.15983},
+@inproceedings{lian2026reloop,
+  title     = {{ReLoop}: Structured Modeling and Behavioral Verification for Reliable {LLM}-Based Optimization},
+  author    = {Lian, Junbo Jacob and Sun, Yujun and Chen, Huiling and Zhang, Chaoyu and Qin, Hanzhang and Teo, Chung-Piaw},
+  booktitle = {Advances in Neural Information Processing Systems},
   year      = {2026},
   url       = {https://arxiv.org/abs/2602.15983}
 }
